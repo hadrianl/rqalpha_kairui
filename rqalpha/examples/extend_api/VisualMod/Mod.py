@@ -14,12 +14,14 @@ import asyncio
 from threading import Thread
 import json
 import http
+import subprocess
 import os
-import signal
+import socket
+
+
+
 
 __config__ = {'order_book_id': 'HSI',
-              'host': 'localhost',
-              'port': 7214,
               'webbrower': None,
               'localvisualize': False}
 
@@ -30,8 +32,6 @@ class DataVisualMod(AbstractMod):
 
     def start_up(self, env, mod_config):
         self._order_book_id = mod_config.order_book_id
-        self._port = mod_config.port
-        self._host = mod_config.host
         self._webbrower = mod_config.webbrower
         self.CLI = set()
         self._data_queue = Queue()
@@ -39,12 +39,14 @@ class DataVisualMod(AbstractMod):
         env.event_bus.add_listener(EVENT.POST_BAR, self._pub_bar)
         env.event_bus.add_listener(EVENT.TRADE, self._pub_trade)
         self._init_websocket_server()
+        self.ps = subprocess.Popen(f'python {os.path.join(os.path.dirname(__file__), "VisualApp.py")}')
+
 
         if mod_config.localvisualize:
             env.event_bus.add_listener(EVENT.POST_SYSTEM_INIT, self._init_local_visualization)
 
     def tear_down(self, code, exception=None):
-        ...
+        self.ps.terminate()
 
     def _pub_bar(self, POST_BAR):
         bar_dict = POST_BAR.bar_dict[self._order_book_id]
@@ -102,7 +104,7 @@ class DataVisualMod(AbstractMod):
 
     def _init_websocket_server(self):
         loop = asyncio.get_event_loop()
-        self._backtest_visual = websockets.serve(self.backtest_visual, self._host, self._port, create_protocol=ServerProtocol)
+        self._backtest_visual = websockets.serve(self.backtest_visual, '0.0.0.0', 7214, create_protocol=ServerProtocol)
         loop.run_until_complete(self._backtest_visual)
 
         self._websocket_thread = Thread(target=loop.run_forever)
@@ -113,7 +115,7 @@ class DataVisualMod(AbstractMod):
         import webbrowser
         if self._webbrower is not None:
             webbrowser.register('brower', None, webbrowser.BackgroundBrowser(self._webbrower))
-            webbrowser.get('brower').open(os.path.join(os.path.dirname(__file__), 'backtest.html'), new=1, autoraise=True)
+            webbrowser.get('brower').open(f'{socket.gethostbyname(socket.gethostname())}:5000', new=1, autoraise=True)
 
 class ServerProtocol(websockets.WebSocketServerProtocol):
     async def process_request(self, path, request_headers):

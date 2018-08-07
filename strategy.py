@@ -123,8 +123,6 @@ __config__ = {
             'enabled': True,
             'lib': 'rqalpha.examples.extend_api.VisualMod',  # 可视化模块
             'order_book_id': 'HSI',
-            'host': '192.168.2.237',
-            'port': 7214,
             'localvisualize': True,
             'webbrower': r'C:\Users\Administrator\AppData\Local\Google\Chrome\Application\chrome.exe'
         },
