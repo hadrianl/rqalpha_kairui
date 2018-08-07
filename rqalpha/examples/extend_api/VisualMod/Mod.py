@@ -7,6 +7,7 @@
 
 from rqalpha.interface import AbstractMod
 from rqalpha.events import EVENT
+from rqalpha.api import logger
 import websockets
 from queue import Queue
 import asyncio
@@ -32,7 +33,7 @@ class DataVisualMod(AbstractMod):
         self._port = mod_config.port
         self._host = mod_config.host
         self._webbrower = mod_config.webbrower
-        self.USERS = set()
+        self.CLI = set()
         self._data_queue = Queue()
 
         env.event_bus.add_listener(EVENT.POST_BAR, self._pub_bar)
@@ -54,22 +55,29 @@ class DataVisualMod(AbstractMod):
         _data = json.dumps(_data)
         self._data_queue.put(_data)
 
-    async def send_data(self, websocket, path):
+    async def backtest_visual(self, websocket, path):
         await self.register(websocket)
-        try:
-            while websocket.open:
-                _data = self._data_queue.get()
-                await asyncio.wait([user.send(_data) for user in self.USERS if user.open])
-        except Exception as e:
-            print(e)
-        finally:
-            websocket.close()
+
+        while websocket.open:
+            _data = self._data_queue.get()
+            await asyncio.ensure_future(self.send_data(_data))
+
+        await self.unregister(websocket)
+
+    async def send_data(self, d):
+        for cli in self.CLI:
+            try:
+                await cli.send(d)
+            except websockets.ConnectionClosed:
+                cli.close()
 
     async def register(self, websocket):
-        self.USERS.add(websocket)
+        logger.debug(f'注册{websocket}')
+        self.CLI.add(websocket)
 
     async def unregister(self, websocket):
-        self.USERS.remove(websocket)
+        logger.debug(f'注销{websocket}')
+        self.CLI.remove(websocket)
 
         
     def _pub_trade(self, Trade):
@@ -94,8 +102,8 @@ class DataVisualMod(AbstractMod):
 
     def _init_websocket_server(self):
         loop = asyncio.get_event_loop()
-        self._start_server = websockets.serve(self.send_data, self._host, self._port, create_protocol=ServerProtocol)
-        loop.run_until_complete(self._start_server)
+        self._backtest_visual = websockets.serve(self.backtest_visual, self._host, self._port, create_protocol=ServerProtocol)
+        loop.run_until_complete(self._backtest_visual)
 
         self._websocket_thread = Thread(target=loop.run_forever)
         self._websocket_thread.setDaemon(True)
@@ -111,5 +119,7 @@ class ServerProtocol(websockets.WebSocketServerProtocol):
     async def process_request(self, path, request_headers):
         if path == '/health/':
             return http.HTTPStatus.OK, [], b'OK\n'
+
+
 
 
