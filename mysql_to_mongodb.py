@@ -12,7 +12,7 @@ import datetime as dt
 import json
 
 MongoDB_client = pymongo.MongoClient('mongodb://localhost:27017/')
-MysqlDB = pymysql.connect()
+MysqlDB = pymysql.connect(input('Host:>'), input('User:>'), input('Password:>'), charset='utf8')
 sp = MongoDB_client.SP
 sp_future_min = sp.get_collection('sp_future_min')
 last_date_stamp = sp_future_min.find_one(projection=['date_stamp'], sort=[('date_stamp', pymongo.DESCENDING)])['date_stamp']

@@ -16,13 +16,14 @@ import json
 import http
 import subprocess
 import os
-import socket
 
 
 
 
 __config__ = {'order_book_id': 'HSI',
               'webbrower': None,
+              'host': 'localhost',
+              'port': 8050,
               'localvisualize': False}
 
 
@@ -33,13 +34,15 @@ class DataVisualMod(AbstractMod):
     def start_up(self, env, mod_config):
         self._order_book_id = mod_config.order_book_id
         self._webbrower = mod_config.webbrower
+        self._host = mod_config.host
+        self._port = mod_config.port
         self.CLI = set()
         self._data_queue = Queue()
 
         env.event_bus.add_listener(EVENT.POST_BAR, self._pub_bar)
         env.event_bus.add_listener(EVENT.TRADE, self._pub_trade)
         self._init_websocket_server()
-        self.ps = subprocess.Popen(f'python {os.path.join(os.path.dirname(__file__), "VisualApp.py")}')
+        self.ps = subprocess.Popen(f'python {os.path.join(os.path.dirname(__file__), "VisualApp.py")} {self._host} {self._port}')
 
 
         if mod_config.localvisualize:
@@ -115,7 +118,7 @@ class DataVisualMod(AbstractMod):
         import webbrowser
         if self._webbrower is not None:
             webbrowser.register('brower', None, webbrowser.BackgroundBrowser(self._webbrower))
-            webbrowser.get('brower').open(f'{socket.gethostbyname(socket.gethostname())}:5000', new=1, autoraise=True)
+            webbrowser.get('brower').open(f'{self._host}:{self._port}', new=1, autoraise=True)
 
 class ServerProtocol(websockets.WebSocketServerProtocol):
     async def process_request(self, path, request_headers):

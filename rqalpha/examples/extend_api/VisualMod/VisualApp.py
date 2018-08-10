@@ -16,15 +16,16 @@
 # limitations under the License.
 
 from flask import Flask, render_template
-import socket
 
 app = Flask(__name__)
 
 @app.route('/')
 def backtest():
-    addr = socket.gethostbyname(socket.gethostname())
-    return render_template('backtest.html', addr=addr)
+    return render_template('backtest.html', host=host)
 
 
 if __name__ == '__main__':
-    app.run('0.0.0.0')
+    import sys
+    host = sys.argv[1]
+    port = int(sys.argv[2])
+    app.run('0.0.0.0', port=port)
