@@ -44,16 +44,25 @@ def handle_bar(context, bar_dict):
     # logger.info(f'{context.portfolio}')
     # logger.info(f'{context.future_account}')
     # logger.info(f'{context.run_info}')
+    _open, _close, _dt = history_bars(context.HSI, context.OBSERVATION, '1m', ['open', 'close', 'datetime'],
+                                      include_now=True)
+    ma5 = talib.MA(_close, timeperiod=5)
+    ma10 = talib.MA(_close, timeperiod=10)
+    ma30 = talib.MA(_close, timeperiod=30)
+    ma60 = talib.MA(_close, timeperiod=60)
+    pub_data(context.now, {'MA5': ma5[-1], 'MA10': ma10[-1], 'MA30': ma30[-1], 'MA60': ma60[-1]})
+    pub_data(context.now, {'account': [context.future_account.total_value, context.future_account.margin, context.future_account.daily_pnl, context.future_account.holding_pnl,
+                                       context.future_account.realized_pnl]})
     if not datetime.time(9, 15) <= context.now.time() <= datetime.time(16, 29):
         # 只做早盘
         return
-    _open, _close, _dt = history_bars(context.HSI, context.OBSERVATION, '1m', ['open', 'close', 'datetime'], include_now=True)
 
     macdDIFF, macdDEA, macd = talib.MACDEXT(_close, fastperiod=context.SHORTPERIOD, fastmatype=1, slowperiod=context.LONGPERIOD, slowmatype=1,
                                          signalperiod=context.SMOOTHPERIOD, signalmatype=1)
     std = (_close - _open)[-1]/talib.STDDEV(_close - _open, timeperiod=60)[-1]
-    ma60 = talib.MA(_close)
+
     macd = macd * 2
+
 
     p = context.portfolio.positions[context.HSI]
     long_con1 = _close[-1] < ma60[-1]
@@ -91,6 +100,7 @@ def handle_bar(context, bar_dict):
         buy_close(context.HSI, 1)
         context.short_signal = 0
         return
+
 
 
 def after_trading(context):

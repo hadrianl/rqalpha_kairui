@@ -29,7 +29,7 @@ __config__ = {'order_book_id': 'HSI',
 
 class DataVisualMod(AbstractMod):
     def __init__(self):
-        ...
+        self._inject_api()
 
     def start_up(self, env, mod_config):
         self._order_book_id = mod_config.order_book_id
@@ -84,7 +84,6 @@ class DataVisualMod(AbstractMod):
         logger.debug(f'注销{websocket}')
         self.CLI.remove(websocket)
 
-        
     def _pub_trade(self, Trade):
         _t = Trade.trade
         trade_dict = {}
@@ -104,6 +103,26 @@ class DataVisualMod(AbstractMod):
         trade_dict['frozen_price'] = _t._frozen_price
         _data = json.dumps(trade_dict)
         self._data_queue.put(_data)
+
+    def _inject_api(self):
+        from rqalpha import export_as_api
+        from rqalpha.execution_context import ExecutionContext
+        from rqalpha.const import EXECUTION_PHASE
+
+        @export_as_api
+        @ExecutionContext.enforce_phase(EXECUTION_PHASE.ON_INIT,
+                                        EXECUTION_PHASE.BEFORE_TRADING,
+                                        EXECUTION_PHASE.ON_BAR,
+                                        EXECUTION_PHASE.AFTER_TRADING,
+                                        EXECUTION_PHASE.SCHEDULED)
+        def pub_data(dt, topic_vals):
+            data = {}
+            data['datetime'] = str(dt)
+            data['topic_vals'] = topic_vals
+            data['topic'] = 'extra'
+            _data = json.dumps(data)
+            self._data_queue.put(_data)
+
 
     def _init_websocket_server(self):
         loop = asyncio.get_event_loop()
