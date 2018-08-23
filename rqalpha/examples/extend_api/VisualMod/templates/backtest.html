@@ -76,8 +76,11 @@
 
 <script type="text/javascript">
 var myChart = echarts.init(document.getElementById('main'));
-var bs = new Array();
-var xzs = new Array();
+var categoryData = new Array();
+var bar = new Array();
+var trade = new Array();
+var is_huatu = true;
+var size = $('#message').val()-0;
 
 option = {
     title : {
@@ -115,21 +118,21 @@ option = {
     yAxis : [
         {
             type : 'value',
-            scale:true,
+            scale: true,
             splitNumber: 5,
             boundaryGap: [0.05, 0.05]
         }
     ],
     series : [
         {
-            name:'KLine',
-            type:'k',
+            name: 'KLine',
+            type: 'k',
             dimensions: ['date', 'open', 'close', 'highest', 'lowest'],
             encode: {
                 x: 'date',
                 y: ['open', 'close', 'highest', 'lowest']
                 },
-            data:[ // 开盘，收盘，最低，最高
+            data: [ // 开盘，收盘，最低，最高
             ],
             zlevel: 0,
             markPoint: {
@@ -206,91 +209,65 @@ option = {
 
 myChart.showLoading();
 
-stringToDate = function(dateStr,separator){
-     if(!separator){
-            separator="-";
-     }
-     var dateArr = dateStr.split(separator);
-     var year = parseInt(dateArr[0]);
-     var month;
-     //处理月份为04这样的情况
-     if(dateArr[1].indexOf("0") == 0){
-         month = parseInt(dateArr[1].substring(1));
-     }else{
-          month = parseInt(dateArr[1]);
-     }
-     var day = parseInt(dateArr[2]);
-     var date = new Date(year,month -1,day);
-     return date;
- }
-
-var categoryData = new Array();
-var bar = new Array();
-var trade = new Array();
-var is_huatu = true;
-var size = $('#message').val()-0;
-
-//myChart.setOption(option);
-
 function addBar(data){
-        categoryData.push(data[0]);
-        bar.push(data.slice(1));
-        option.xAxis[0].data=categoryData;
-        option.series[0].data=bar;
-        option.dataZoom.startValue=categoryData[categoryData.length-size];
-        option.dataZoom.endValue=categoryData[categoryData.length-1];
+    categoryData.push(data[0]);
+    bar.push(data.slice(1));
+    option.xAxis[0].data=categoryData;
+    option.series[0].data=bar;
+    option.dataZoom.startValue=categoryData[categoryData.length-size];
+    option.dataZoom.endValue=categoryData[categoryData.length-1];
 
-        if(is_huatu){
-            myChart.setOption(option);
-        }
+    if(is_huatu){
+        myChart.setOption(option);
+    }
 }
 
 
 function addTrade(trade_data){
-        data = [trade_data.trading_dt, trade_data.price, trade_data.side];
-        var t_row = document.createElement("tr");
-        var t_time = document.createElement("td");
-        var t_code = document.createElement("td");
-        var t_side = document.createElement("td");
-        var t_price = document.createElement("td");
-        var t_effect = document.createElement("td");
-        t_time.innerHTML = trade_data.trading_dt;
-        t_code.innerHTML = trade_data.order_book_id;
-        t_side.innerHTML = trade_data.side;
-        (trade_data.side == "BUY")?(t_side.style.color="red"):(t_side.style.color="green");
-        t_price.innerHTML = trade_data.price;
-        t_effect.innerHTML = trade_data.position_effect;
-        t_row.appendChild(t_time);
-        t_row.appendChild(t_code);
-        t_row.appendChild(t_side);
-        t_row.appendChild(t_price);
-        t_row.appendChild(t_effect);
-        $("#trade").children("tbody").prepend(t_row);
+    data = [trade_data.trading_dt, trade_data.price, trade_data.side];
+    var t_row = document.createElement("tr");
+    var t_time = document.createElement("td");
+    var t_code = document.createElement("td");
+    var t_side = document.createElement("td");
+    var t_price = document.createElement("td");
+    var t_effect = document.createElement("td");
+    t_time.innerHTML = trade_data.trading_dt;
+    t_code.innerHTML = trade_data.order_book_id;
+    t_side.innerHTML = trade_data.side;
+    (trade_data.side == "BUY")?(t_side.style.color="red"):(t_side.style.color="green");
+    t_price.innerHTML = trade_data.price;
+    t_effect.innerHTML = trade_data.position_effect;
+    t_row.appendChild(t_time);
+    t_row.appendChild(t_code);
+    t_row.appendChild(t_side);
+    t_row.appendChild(t_price);
+    t_row.appendChild(t_effect);
+    $("#trade").children("tbody").prepend(t_row);
 
-        var trade_point = {
-                        name: 'trade',
-                        symbol: 'triangle',
-                        symbolSize: 10,
-                        coord: [data[0], data[1]],
-                        value: data[1],
-                        itemStyle: {
-                            normal: {color: 'rgb(41,60,85)'}
-                        }
-                        };
+    var trade_point = {
+                    name: 'trade',
+                    symbol: 'triangle',
+                    symbolSize: 10,
+                    coord: [data[0], data[1]],
+                    value: data[1],
+                    itemStyle: {
+                        normal: {color: 'rgb(41,60,85)'}
+                    }
+                    };
 
-        if(data[2]=='SELL'){
-            trade_point.itemStyle.normal.color = 'rgb(0,255,0)';
-            trade_point.symbolRotate = -180;
-        }else{
-            trade_point.itemStyle.normal.color = 'rgb(255,0,0)';
-            trade_point.symbolRotate = 0;
-        }
+    if(data[2]=='SELL'){
+        trade_point.itemStyle.normal.color = 'rgb(0,255,0)';
+        trade_point.symbolRotate = -180;
+    }else{
+        trade_point.itemStyle.normal.color = 'rgb(255,0,0)';
+        trade_point.symbolRotate = 0;
+    }
 
-        option.series[0].markPoint.data.push(trade_point);
+    option.series[0].markPoint.data.push(trade_point);
 
-        if(is_huatu){
-            myChart.setOption(option);
-        }
+    if(is_huatu){
+        myChart.setOption(option);
+    }
 }
 
 function addExtra(data){
@@ -342,7 +319,7 @@ $(function () {
             };
             var x=null,y=null;
             socket.onmessage = function (e) {
-                <!--console.log('message: ' + e.data);//打印出服务端返回过来的数据-->
+                console.log('message: ' + e.data);//打印出服务端返回过来的数据
                 var d= $.parseJSON(e.data);
                 if(d.topic=='bar'){
                     bar_data = [d.datetime, d.open, d.close, d.high, d.low];

@@ -16,6 +16,7 @@ import json
 import http
 import subprocess
 import os
+import numpy as np
 
 
 
@@ -57,8 +58,14 @@ class DataVisualMod(AbstractMod):
         if '_id' in _data:
             _data.pop('_id')
         _data['topic'] = 'bar'
-        _data = json.dumps(_data)
-        self._data_queue.put(_data)
+        has_data = all([_data['open'] is not np.nan,
+                        _data['high'] is not np.nan,
+                        _data['low'] is not np.nan,
+                        _data['close'] is not np.nan
+                        ])
+        if has_data:
+            _data = json.dumps(_data)
+            self._data_queue.put(_data)
 
     async def backtest_visual(self, websocket, path):
         await self.register(websocket)

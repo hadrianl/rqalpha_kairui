@@ -82,6 +82,23 @@ class SimulationEventSource(AbstractEventSource):
         return sorted(list(trading_minutes))
     # [END] minute event helper
 
+    def _get_trading_minutes_ctp(self, trading_date):
+        import datetime as dt
+        trading_minutes = set()
+        _m = []
+        _n = []
+        for account_type in self._config.base.accounts:
+            if account_type == DEFAULT_ACCOUNT_TYPE.STOCK.name:
+                trading_minutes = trading_minutes.union(self._get_stock_trading_minutes(trading_date))
+            elif account_type == DEFAULT_ACCOUNT_TYPE.FUTURE.name:
+                trading_minutes = trading_minutes.union(self._get_future_trading_minutes(trading_date))
+        for t in sorted(list(trading_minutes)):
+            if t.time() <= dt.time(18, 0):
+                _m.append(t)
+            else:
+                _n.append(t)
+        return _n + _m
+
     def events(self, start_date, end_date, frequency):
         if frequency == "1d":
             # 根据起始日期和结束日期，获取所有的交易日，然后再循环获取每一个交易日
@@ -104,7 +121,10 @@ class SimulationEventSource(AbstractEventSource):
                 done = False
 
                 # trading_minutes = self._env.data_proxy.get_trading_minutes_for('HSI', day)
-                trading_minutes = self._get_trading_minutes(date)
+                if self._config.base.__dict__.get('date_type') == 'TDX':
+                    trading_minutes = self._get_trading_minutes_ctp(date)
+                else:
+                    trading_minutes = self._get_trading_minutes(date)
                 trading_start_time = trading_minutes[0]
                 trading_end_time = trading_minutes[-1]
                 # dt_before_day_trading = date.replace(hour=8, minute=45)
