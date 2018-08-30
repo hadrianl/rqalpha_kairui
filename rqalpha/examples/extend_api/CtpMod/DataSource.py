@@ -8,6 +8,7 @@
 
 from rqalpha.interface import AbstractDataSource
 from rqalpha.const import COMMISSION_TYPE
+from .util import FUTURE_INFO
 from rqalpha.api import logger
 from rqalpha.model.instrument import Instrument
 from rqalpha.model.snapshot import SnapshotObject
@@ -17,6 +18,7 @@ import pymongo
 import datetime
 from functools import lru_cache
 import re
+# from .DataFetch import Future
 
 '''
 参数	类型	说明
@@ -43,13 +45,14 @@ class CTPDataSource(AbstractDataSource):
     def __init__(self, host, db, port=27017):
         self._conn = pymongo.MongoClient(f'mongodb://{host}:{port}/')
         self._db = self._conn.get_database(db)
+        # self._data_fetcher = Future(host, port, db)
 
     def available_data_range(self, frequency):
-        if frequency == '1m':
-            Collection = self._db.future_1min
-            _start = Collection.find_one(projection=['datetime'], sort=[('datetime', pymongo.ASCENDING)])['datetime']
-            _end = Collection.find_one(projection=['datetime'], sort=[('datetime', pymongo.DESCENDING)])['datetime']
-            return ((_start + datetime.timedelta(days=1)).date(), (_end - datetime.timedelta(days=1)).date())
+        self.frequency = frequency
+        Collection = self._db.future_1min
+        _start = Collection.find_one(projection=['datetime'], sort=[('datetime', pymongo.ASCENDING)])['datetime']
+        _end = Collection.find_one(projection=['datetime'], sort=[('datetime', pymongo.DESCENDING)])['datetime']
+        return ((_start + datetime.timedelta(days=1)).date(), (_end - datetime.timedelta(days=1)).date())
 
     def current_snapshot(self, instrument, frequency, dt):
         order_book_id = instrument.order_book_id
@@ -100,6 +103,7 @@ class CTPDataSource(AbstractDataSource):
             # _maturity_date = Collection.find_one({'code': c}, {'datetime': 1}, sort=[('datetime', pymongo.DESCENDING)])['datetime'].date()
             _listed_date = '0000-00-00'
             _maturity_date = '0000-00-00'
+            underlying_symbol, contract = re.findall(r'([A-Z]+?)(L*\d+)', c)[0]
             if c[-2] == 'L':
                 is_continuous = True
             else:
@@ -109,18 +113,19 @@ class CTPDataSource(AbstractDataSource):
                 _p = 'Index' if c[0] == 'I' else 'Government'
             else:
                 _p = 'Commodity'
+
             instructment =  {
                 'order_book_id': c,
                 'symbol': c,
-                'margin_rate': 0.5,
+                'margin_rate': FUTURE_INFO[underlying_symbol]['margin_rate'],
                 'abbrev_symbol': 'null' if is_continuous else c,
                 'round_lot': 1.0,
                 'listed_date': '0000-00-00' if is_continuous else str(_listed_date),
                 'de_listed_date': '0000-00-00',
                 'type': 'Future',
-                'contract_multiplier': 50,  # todo: contract_multiplier
-                'underlying_order_book_id': 'null' if c[:2] not in ('IF', 'IH', 'IC') else c[:2],
-                'underlying_symbol': re.findall(r'([A-Z]+?)(L*\d+)', c)[0],
+                'contract_multiplier': FUTURE_INFO[underlying_symbol]['contract_multiplier'],
+                'underlying_order_book_id': 'null' if underlying_symbol not in ('IF', 'IH', 'IC') else underlying_symbol,
+                'underlying_symbol': underlying_symbol,
                 'maturity_date':  '0000-00-00' if is_continuous else str(_maturity_date),
                 'settlement_method': 'CashSettlementRequired',
                 'product': _p,
@@ -151,15 +156,12 @@ class CTPDataSource(AbstractDataSource):
             return data
 
     def get_commission_info(self, instrument):
-        default = {'commission_type': COMMISSION_TYPE.BY_VOLUME, 'open_commission_ratio': 33.54, 'close_commission_ratio': 33.54, 'close_commission_today_ratio': 33.54}
-        commission_info = commission.get(instrument.order_book_id, default)
+        commission_info = FUTURE_INFO[instrument.underlying_symbol]['commission']
         return commission_info
 
     def get_margin_info(self, instrument):
-        default = {'long_margin_ratio': 0.08, 'short_margin_ratio': 0.08}
-        margin_info = margin.get(instrument.order_book_id, default)
+        margin_info = {'long_margin_ratio': instrument.margin_rate, 'short_margin_ratio': instrument.margin_rate}
         return margin_info
-
 
     def get_merge_ticks(self, order_book_id_list, trading_date, last_dt=None):
         ...
@@ -187,6 +189,7 @@ class CTPDataSource(AbstractDataSource):
 
     def get_trading_minutes_for(self, instrument, trading_dt):
         order_book_id = instrument.order_book_id
+        # trading_minutes = self._data_fetcher.get_trading_minutes(order_book_id, trading_dt, self.frequency)
         Collection = self._db.future_1min
         cursor = Collection.find({'code': order_book_id,
                                 'datetime':{'$gte': datetime.datetime(trading_dt.year, trading_dt.month, trading_dt.day, 0, 0),
@@ -201,7 +204,8 @@ class CTPDataSource(AbstractDataSource):
             else:
                 _d2.append(d)
         data =_d1 + _d2
-        return [d['datetime'] for d in data]
+        trading_minutes = [d['datetime'] for d in data]
+        return trading_minutes
 
     def get_yield_curve(self, start_date, end_date, tenor=None):
         ...
@@ -212,7 +216,7 @@ class CTPDataSource(AbstractDataSource):
         Collection = self._db.future_1min
         data = []
         _dt = dt
-        while True:
+        while True:  # 核心部分，排序
             if datetime.time(0, 0) < _dt.time() <= datetime.time(18, 0):
                 _earliest_dt = datetime.datetime(_dt.year, _dt.month, _dt.day, 0, 0)
                 _latest_dt = datetime.datetime(_dt.year, _dt.month, _dt.day, 18, 0) if _dt != dt else _dt
