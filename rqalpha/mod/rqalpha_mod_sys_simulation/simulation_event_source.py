@@ -136,7 +136,9 @@ class SimulationEventSource(AbstractEventSource):
                     exit_loop = True
                     # trading_minutes = self._get_trading_minutes(date)
                     for calendar_dt in trading_minutes:
-                        if last_dt is not None and calendar_dt < last_dt:
+                        _calendar_dt = calendar_dt - datetime.timedelta(days=1) if calendar_dt.time() > datetime.time(18, 0) else calendar_dt
+                        if last_dt is not None and _calendar_dt < last_dt:
+                            #
                             continue
 
                         if calendar_dt < dt_before_day_trading:
@@ -152,7 +154,7 @@ class SimulationEventSource(AbstractEventSource):
                                         trading_dt=trading_dt - datetime.timedelta(minutes=15))
                         if self._universe_changed:
                             self._universe_changed = False
-                            last_dt = calendar_dt
+                            last_dt = _calendar_dt
                             exit_loop = False
                             break
                         # yield handle bar

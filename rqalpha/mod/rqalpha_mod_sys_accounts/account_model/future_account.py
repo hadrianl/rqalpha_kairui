@@ -72,6 +72,7 @@ class FutureAccount(BaseAccount):
         if quantity > 0:
             # 平昨仓
             if position.sell_old_quantity > 0:
+                soq = position.sell_old_quantity
                 orders.append(order(
                     order_book_id,
                     min(quantity, position.sell_old_quantity),
@@ -79,11 +80,12 @@ class FutureAccount(BaseAccount):
                     POSITION_EFFECT.CLOSE,
                     style
                 ))
-                quantity -= position.sell_old_quantity
+                quantity -= soq
             if quantity <= 0:
                 return orders
             # 平今仓
             if position.sell_today_quantity > 0:
+                stq = position.sell_today_quantity
                 orders.append(order(
                     order_book_id,
                     min(quantity, position.sell_today_quantity),
@@ -91,7 +93,7 @@ class FutureAccount(BaseAccount):
                     POSITION_EFFECT.CLOSE_TODAY,
                     style
                 ))
-                quantity -= position.sell_today_quantity
+                quantity -= stq
             if quantity <= 0:
                 return orders
             # 开多仓
@@ -107,6 +109,7 @@ class FutureAccount(BaseAccount):
             # 平昨仓
             quantity *= -1
             if position.buy_old_quantity > 0:
+                boq = position.buy_old_quantity
                 orders.append(order(
                     order_book_id,
                     min(quantity, position.buy_old_quantity),
@@ -114,11 +117,12 @@ class FutureAccount(BaseAccount):
                     POSITION_EFFECT.CLOSE,
                     style
                 ))
-                quantity -= position.buy_old_quantity
+                quantity -= boq
             if quantity <= 0:
                 return orders
             # 平今仓
             if position.buy_today_quantity > 0:
+                btq = position.buy_today_quantity
                 orders.append(order(
                     order_book_id,
                     min(quantity, position.buy_today_quantity),
@@ -126,7 +130,7 @@ class FutureAccount(BaseAccount):
                     POSITION_EFFECT.CLOSE_TODAY,
                     style
                 ))
-                quantity -= position.buy_today_quantity
+                quantity -= btq
             if quantity <= 0:
                 return orders
             # 开空仓
