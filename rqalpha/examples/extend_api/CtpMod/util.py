@@ -19,8 +19,8 @@ from rqalpha.const import COMMISSION_TYPE
 
 FUTURE_INFO = {
     'AP': {'contract_multiplier': 10, 'margin_rate': 0.14,
-           'commission': {'commission_type': COMMISSION_TYPE.BY_VOLUME, 'open_commission_ratio': 0.5,
-                          'close_commission_ratio': 0.5, 'close_commission_today_ratio': 3}},
+           'commission': {'commission_type': COMMISSION_TYPE.BY_VOLUME, 'open_commission_ratio': 20,
+                          'close_commission_ratio': 20, 'close_commission_today_ratio': 20}},
     'MA': {'contract_multiplier': 10, 'margin_rate': 0.11,
            'commission': {'commission_type': COMMISSION_TYPE.BY_VOLUME, 'open_commission_ratio': 2,
                           'close_commission_ratio': 2, 'close_commission_today_ratio': 6}},

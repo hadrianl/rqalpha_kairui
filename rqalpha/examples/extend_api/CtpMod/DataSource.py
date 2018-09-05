@@ -36,9 +36,50 @@ maturity_date	str	期货到期日。主力连续合约与指数连续合约都�
 settlement_method	str	交割方式，'CashSettlementRequired' - 现金交割, 'PhysicalSettlementRequired' - 实物交割
 product	str	产品类型，'Index' - 股指期货, 'Commodity' - 商品期货, 'Government' - 国债期货
 exchange	str	交易所，'DCE' - 大连商品交易所, 'SHFE' - 上海期货交易所，'CFFEX' - 中国金融期货交易所, 'CZCE'- 郑州商品交易所
+
+0.0y	1.9096
+0.08y	1.9877
+0.17y	2.08
+0.25y	2.1451
+0.5y	2.6733
+0.75y	2.8057
+1.0y	2.8593
+3.0y	3.3028
+5.0y	3.4022
+7.0y	3.594
+10.0y	3.6101
+15.0y	3.8934
+20.0y	3.9346
+30.0y	4.1951
+40.0y	4.197
+50.0y	4.199
 '''
 commission={}
 margin={}
+
+YIELD = {
+'0S': 1.9096,
+'1M': 1.9877,
+'2M': 2.08,
+'3M': 2.1451,
+'6M': 2.6733,
+'9M': 2.8057,
+'1Y': 2.8593,
+'2Y': 3.1084,
+'3Y': 3.3028,
+'4Y': 3.3737,
+'5Y': 3.4022,
+'6Y': 3.5223,
+'7Y': 3.594,
+'8Y': 3.605,
+'9Y': 3.6089,
+'10Y': 3.6101,
+'15Y': 3.8934,
+'20Y': 3.9346,
+'30Y': 4.1951,
+'40Y': 4.197,
+'50Y': 4.199,
+}
 
 
 class CTPDataSource(AbstractDataSource):
@@ -145,6 +186,7 @@ class CTPDataSource(AbstractDataSource):
             data = None
 
         if data is None:
+            # print(order_book_id, dt)
             # return super(SPDataSource, self).get_bar(instrument, dt, frequency)
             # with open('missing_data.csv','a') as f:
             #     f.write(f'{frequency}, {order_book_id}, {dt}\n')
@@ -203,12 +245,20 @@ class CTPDataSource(AbstractDataSource):
                 _d1.append(d)
             else:
                 _d2.append(d)
-        data =_d1 + _d2
+        data = _d2 + _d1
         trading_minutes = [d['datetime'] for d in data]
+
         return trading_minutes
 
     def get_yield_curve(self, start_date, end_date, tenor=None):
-        ...
+        _base = {}
+        for t in YIELD:
+            if t in tenor:
+                _base[t] = YIELD[t]
+
+        date_range = pd.date_range(start_date, end_date)
+        df = pd.DataFrame(_base, index=date_range)
+        return df
 
     def history_bars(self, instrument, bar_count, frequency, fields, dt, skip_suspended=True,
                      include_now=False, adjust_type='pre', adjust_orig=None):
