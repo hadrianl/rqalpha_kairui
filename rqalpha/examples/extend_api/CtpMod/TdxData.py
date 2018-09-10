@@ -48,8 +48,8 @@ class Future:
 
         if isinstance(end, str):
             end = parser.parse(end)
-            end = end + dt.timedelta(days=1)
 
+        end = end + dt.timedelta(days=1) if end is not None else end
 
         ktype = self.__check_ktype(ktype)
         _fields = ['datetime', 'open', 'high', 'low', 'close', 'position', 'trade', 'price', 'code', 'market']
@@ -57,12 +57,10 @@ class Future:
                                                            '$lt': end if end is not None else dt.datetime(2999, 1, 1)}}, _fields)
         history_bar = [d for d in cursor]   # 从本地服务器获取历史数据
         df = pd.DataFrame(history_bar, columns=_fields)
-
         df.set_index('datetime', drop=False, inplace=True)
         _t = df['datetime'].apply(self.__sort_bars)
         df['_t'] = _t
         df.sort_values('_t', inplace=True)
-
         def _resample(x):
             _dt = pd.date_range(x.index[0].date(), x.index[0].date() + dt.timedelta(days=1), freq='T')[:len(x)]
             x['_t_temp'] = _dt

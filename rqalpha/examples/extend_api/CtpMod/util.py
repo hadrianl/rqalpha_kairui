@@ -186,4 +186,7 @@ FUTURE_INFO = {
     'TF': {'contract_multiplier': 10000, 'margin_rate': 0.022,
            'commission': {'commission_type': COMMISSION_TYPE.BY_VOLUME, 'open_commission_ratio': 3,
                           'close_commission_ratio': 3, 'close_commission_today_ratio': 0}},
+    'TS': {'contract_multiplier': 10000, 'margin_rate': 0.005,
+           'commission': {'commission_type': COMMISSION_TYPE.BY_VOLUME, 'open_commission_ratio': 3,
+                          'close_commission_ratio': 3, 'close_commission_today_ratio': 0}},
 }

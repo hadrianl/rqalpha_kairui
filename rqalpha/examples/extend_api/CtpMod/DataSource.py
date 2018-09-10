@@ -106,7 +106,7 @@ class CTPDataSource(AbstractDataSource):
         _d2=[]
         sep_time = datetime.time(18, 0)
         for d in cursor:
-            if d['dateime'].time() <= sep_time:
+            if d['datetime'].time() <= sep_time:
                 _d1.append(d)
             else:
                 _d2.append(d)
@@ -114,7 +114,7 @@ class CTPDataSource(AbstractDataSource):
 
         df = pd.DataFrame(data)
         if not df.empty:
-            _datetime = datetime.datetime.strptime(df['datetime'].iloc[-1], '%Y-%m-%d %H:%M:%S').timestamp()
+            _datetime = df['datetime'].iloc[-1].timestamp()
             _open = df['open'].iloc[0]
             _high = df['high'].max()
             _low = df['low'].min()

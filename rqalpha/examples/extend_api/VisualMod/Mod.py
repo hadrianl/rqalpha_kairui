@@ -8,6 +8,7 @@
 from rqalpha.interface import AbstractMod
 from rqalpha.events import EVENT
 from rqalpha.api import logger
+from rqalpha.environment import Environment
 import websockets
 from queue import Queue
 import asyncio
@@ -41,6 +42,7 @@ class DataVisualMod(AbstractMod):
         self._data_queue = Queue()
 
         env.event_bus.add_listener(EVENT.POST_BAR, self._pub_bar)
+        env.event_bus.add_listener(EVENT.POST_BAR, self._pub_account)
         env.event_bus.add_listener(EVENT.TRADE, self._pub_trade)
         self._init_websocket_server()
         self.ps = subprocess.Popen(f'python {os.path.join(os.path.dirname(__file__), "VisualApp.py")} {self._host} {self._port}')
@@ -66,6 +68,26 @@ class DataVisualMod(AbstractMod):
         if has_data:
             _data = json.dumps(_data)
             self._data_queue.put(_data)
+
+    def _pub_account(self, POST_BAR):
+        account = Environment.get_instance().portfolio.accounts['FUTURE']
+
+        _data = {
+                'datetime': str(POST_BAR.bar_dict.dt),
+                'total_value': account.total_value,
+                'margin': account.margin,
+                'buy_margin': account.buy_margin,
+                'sell_margin': account.sell_margin,
+                'daily_pnl': account.daily_pnl,
+                'holding_pnl': account.holding_pnl,
+                'realized_pnl': account.realized_pnl,
+                'frozen_cash': account.frozen_cash,
+                'cash': account.cash,
+                'market_value': account.market_value,
+                'transaction_cost': account.transaction_cost}
+        _data['topic'] = 'account'
+        _data = json.dumps(_data)
+        self._data_queue.put(_data)
 
     async def backtest_visual(self, websocket, path):
         await self.register(websocket)
