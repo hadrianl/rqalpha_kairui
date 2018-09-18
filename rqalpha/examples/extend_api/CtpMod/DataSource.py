@@ -267,17 +267,17 @@ class CTPDataSource(AbstractDataSource):
         data = []
         _dt = dt
         while True:  # 核心部分，排序
-            if datetime.time(0, 0) < _dt.time() <= datetime.time(18, 0):
+            if datetime.time(0, 0) <= _dt.time() <= datetime.time(18, 0):
                 _earliest_dt = datetime.datetime(_dt.year, _dt.month, _dt.day, 0, 0)
                 _latest_dt = datetime.datetime(_dt.year, _dt.month, _dt.day, 18, 0) if _dt != dt else _dt
-                _d = Collection.find({'code': order_book_id, 'datetime':{'$gt': _earliest_dt, '$lte': _latest_dt}}, sort=[('datetime', pymongo.DESCENDING)])
-                _dt = _earliest_dt
+                _d = Collection.find({'code': order_book_id, 'datetime':{'$gte': _earliest_dt, '$lte': _latest_dt}}, sort=[('datetime', pymongo.DESCENDING)])
+                _dt = datetime.datetime(_dt.year, _dt.month, _dt.day, 23, 59)
                 data.extend(d for d in _d)
             else:
-                _earliest_dt = datetime.datetime(_dt.year, _dt.month, _dt.day, 18, 0)
-                _latest_dt = datetime.datetime(_dt.year, _dt.month, _dt.day, 0, 0) + datetime.timedelta(days=1) if _dt != dt else _dt
-                _d = Collection.find({'code': order_book_id, 'datetime':{'$gt':_earliest_dt, '$lte': _latest_dt}}, sort=[('datetime', pymongo.DESCENDING)])
-                _dt = _earliest_dt - datetime.timedelta(days=1)
+                _earliest_dt = datetime.datetime(_dt.year, _dt.month, _dt.day, 18, 1)
+                _latest_dt = datetime.datetime(_dt.year, _dt.month, _dt.day, 23, 59) if _dt != dt else _dt
+                _d = Collection.find({'code': order_book_id, 'datetime':{'$gte':_earliest_dt, '$lte': _latest_dt}}, sort=[('datetime', pymongo.DESCENDING)])
+                _dt = _earliest_dt - datetime.timedelta(days=1, minutes=1)
                 data.extend(d for d in _d)
 
             if len(data) >= bar_count + 1:
