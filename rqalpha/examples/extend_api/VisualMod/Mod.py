@@ -117,13 +117,13 @@ class DataVisualMod(AbstractMod):
     #     self._data_queue.put(_data)
 
     async def backtest_visual(self, websocket, path):
-        await self.register(websocket)
+        self.register(websocket)
 
         while websocket.open:
             _data = self._data_queue.get()
             await asyncio.ensure_future(self.send_data(_data))
 
-        await self.unregister(websocket)
+        self.unregister(websocket)
 
     async def send_data(self, d):
         for cli in self.CLI:
@@ -132,11 +132,11 @@ class DataVisualMod(AbstractMod):
             except websockets.ConnectionClosed:
                 cli.close()
 
-    async def register(self, websocket):
+    def register(self, websocket):
         logger.debug(f'注册{websocket}')
         self.CLI.add(websocket)
 
-    async def unregister(self, websocket):
+    def unregister(self, websocket):
         logger.debug(f'注销{websocket}')
         self.CLI.remove(websocket)
 
