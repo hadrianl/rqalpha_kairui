@@ -110,7 +110,7 @@ class CTPDataSource(AbstractDataSource):
                 _d1.append(d)
             else:
                 _d2.append(d)
-        data =_d1 + _d2
+        data =_d2 + _d1
 
         df = pd.DataFrame(data)
         if not df.empty:
@@ -124,12 +124,12 @@ class CTPDataSource(AbstractDataSource):
             _datetime = dt.timestamp()
             _open, _high, _low, _last, _volume = 0, 0, 0, 0, 0
         #
-        pre_close_raw = Collection.find_one({'code': order_book_id,
+        prev_close_raw = Collection.find_one({'code': order_book_id,
                                              'datetime': {'$lt': datetime.datetime(dt.year, dt.month, dt.day, 0, 0)},
                                              'hour':{'$lt': 18}},
                                             sort = [('datetime', pymongo.DESCENDING)])
-        _pre_close = pre_close_raw['close']
-        _data = {'datetime': _datetime, 'open': _open, 'high': _high, 'low': _low, 'last': _last, 'volume': _volume, 'pre_close': _pre_close}
+        _prev_close = prev_close_raw['close']
+        _data = {'datetime': _datetime, 'open': _open, 'high': _high, 'low': _low, 'last': _last, 'volume': _volume, 'prev_close': _prev_close}
 
         return SnapshotObject(instrument, _data, dt)
 

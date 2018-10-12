@@ -34,7 +34,7 @@ class Future:
         code_list = self._col.distinct('code')
         return code_list
 
-    def get_bar(self, code, fields=None, start=None, end=None, ktype='1m'):
+    def get_bars(self, code, fields=None, start=None, end=None, ktype='1m'):
         '''
         获取k线数据，历史k线从数据库拿，当日从tdx服务器提取,按天提取数据
         :param code: 代码
@@ -49,12 +49,15 @@ class Future:
         if isinstance(end, str):
             end = parser.parse(end)
 
-        end = end + dt.timedelta(days=1) if end is not None else end
+        start = dt.datetime(1970, 1, 2) if start is None else start
+        end = dt.datetime(2999, 1, 1) if end is None else end
+        _start = start - dt.timedelta(days=1)
+        _end = end + dt.timedelta(days=1)
+
 
         ktype = self.__check_ktype(ktype)
         _fields = ['datetime', 'open', 'high', 'low', 'close', 'position', 'trade', 'price', 'code', 'market']
-        cursor = self._col.find({'code': code, 'datetime':{'$gte': start if start is not None else dt.datetime(1970, 1, 1),
-                                                           '$lt': end if end is not None else dt.datetime(2999, 1, 1)}}, _fields)
+        cursor = self._col.find({'code': code, 'datetime':{'$gte': _start, '$lt': _end}}, _fields)
         history_bar = [d for d in cursor]   # 从本地服务器获取历史数据
         df = pd.DataFrame(history_bar, columns=_fields)
         df.set_index('datetime', drop=False, inplace=True)
@@ -89,11 +92,13 @@ class Future:
         if isinstance(resampled_df.index, pd.MultiIndex):
             resampled_df.reset_index(0, drop=True, inplace=True)
 
-        resampled_df = resampled_df.rename(columns={'vol': 'trade'})
+        resampled_df = resampled_df.loc[(resampled_df._t>=self.__sort_bars(start))&(resampled_df._t <= self.__sort_bars(end))]
+        resampled_df = resampled_df.rename(columns={'trade': 'vol'})
         if fields is None:
             fields = [field for field in resampled_df.columns]
         else:
             fields = [field for field in fields if field in resampled_df.columns]
+
 
         return resampled_df.loc[:, fields].T.as_matrix()
 
