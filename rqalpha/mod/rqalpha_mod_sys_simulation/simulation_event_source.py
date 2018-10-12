@@ -125,6 +125,9 @@ class SimulationEventSource(AbstractEventSource):
                     trading_minutes = self._get_trading_minutes_ctp(date)
                 else:
                     trading_minutes = self._get_trading_minutes(date)
+                if len(trading_minutes) == 0:
+                    print(f'交易日{day}无交易数据！')
+                    continue
                 trading_start_time = trading_minutes[0]
                 trading_end_time = trading_minutes[-1]
                 # dt_before_day_trading = date.replace(hour=8, minute=45)
