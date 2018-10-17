@@ -7,6 +7,7 @@
 
 from rqalpha.interface import AbstractMod
 from .DataSource import CTPDataSource
+from .ctp_event_source import CtpEventSource
 from rqalpha.events import EventBus, EVENT
 from .TdxData import Future
 from rqalpha.environment import Environment
@@ -22,6 +23,8 @@ class CTPDataMod(AbstractMod):
 
     def start_up(self, env, mod_config):
         self._config = mod_config
+        self._env = env
+        env.set_event_source(CtpEventSource(env))
         env.set_data_source(CTPDataSource(mod_config.host, mod_config.db, mod_config.port))
 
     def _inject_extend_api(self):

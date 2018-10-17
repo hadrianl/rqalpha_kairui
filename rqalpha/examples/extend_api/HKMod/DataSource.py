@@ -16,24 +16,9 @@ import numpy as np
 import pymongo
 import datetime
 from functools import lru_cache
+from collections import deque
+import re
 
-
-instructment_HSI =  {'abbrev_symbol': 'null',
-  'contract_multiplier': 50,
-  'de_listed_date': '0000-00-00',
-  'exchange': 'SHFE',
-  'listed_date': '0000-00-00',
-  'margin_rate': 0.05,
-  'maturity_date': '0000-00-00',
-  'order_book_id': 'HSI',
-  'product': 'Index',
-  'round_lot': 1.0,
-  'settlement_method': 'CashSettlementRequired',
-  'symbol': '恒指主力合约',
-  'trading_unit': '5',
-  'type': 'Future',
-  'underlying_order_book_id': 'HSI',
-  'underlying_symbol': 'HSI'}
 
 
 class HKDataSource(AbstractDataSource):
@@ -120,6 +105,7 @@ class HKDataSource(AbstractDataSource):
             logger.info(f'<Data Missing>lack of {frequency} data --- {order_book_id}@{dt} ')
             return {'code': order_book_id, 'datetime': dt.strftime('%Y-%m-%d %H:%M:%S'), 'open': np.nan, 'high': np.nan, 'low': np.nan, 'close': np.nan, 'volume': np.nan}
         else:
+            data['datetime'] = data['datetime'].strftime('%Y-%m-%d %H:%M:%S')
             return data
 
     def get_commission_info(self, instrument):
@@ -196,19 +182,42 @@ class HKDataSource(AbstractDataSource):
     def history_bars(self, instrument, bar_count, frequency, fields, dt, skip_suspended=True,
                      include_now=False, adjust_type='pre', adjust_orig=None):
         order_book_id = instrument.order_book_id
-        Collection = self._db.future_1min
+        Collection = self._db.get_collection(f'future_{frequency}_')
         query_type = '$lte' if include_now else '$lt'
-        frequency = '1min' if frequency in ['1m', '1min'] else frequency
-        data = Collection.find({'code': order_book_id, 'type': frequency, 'datetime':{query_type: dt}}, limit=bar_count, sort=[('datetime', pymongo.DESCENDING)])
-        data = [d for d in data]
-        data.reverse()
-        _d = pd.DataFrame(data)
-        _d['datetime'] = _d['datetime'].apply(lambda x: x.timestamp())
+        cur = Collection.find({'code': order_book_id, 'datetime':{query_type: dt}}, limit=bar_count, sort=[('datetime', pymongo.DESCENDING)])
+        data = deque()
+        for c in cur:
+            c['datetime'] = c['datetime'].timestamp()
+            data.appendleft(c)
+
+        _d = pd.DataFrame(list(data))
+        # _d['datetime'] = _d['datetime'].apply(lambda x: x.timestamp())
         fields = [field for field in fields if field in _d.columns]
         return _d.loc[:, fields].T.as_matrix()
 
     def get_risk_free_rate(self, start_date, end_date):
         return 0.028
+
+    @staticmethod
+    def _check_ktype(ktype):
+        _ktype = re.findall(r'^(\d+)([a-zA-Z]+)$', ktype)[0]
+        if _ktype:
+            _n = int(_ktype[0])
+            _t = _ktype[1].lower()
+            if _t in ['m', 'min']:
+                _t = 'T'
+                if _n not in [1, 5, 15, 30, 60]:
+                    raise Exception(f'不支持{ktype}类型, 请输入正确的ktype!')
+            elif _t in ['d', 'day']:
+                _t = 'D'
+                if _n not in [1]:
+                    raise Exception(f'不支持{ktype}类型, 请输入正确的ktype!')
+            else:
+                raise Exception(f'不支持{ktype}类型, 请输入正确的ktype!')
+        else:
+            raise Exception(f'不支持{ktype}类型, 请输入正确的ktype!')
+
+        return f'{_n}{_t}'
 
 
 
