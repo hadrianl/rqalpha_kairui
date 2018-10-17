@@ -237,16 +237,8 @@ class CTPDataSource(AbstractDataSource):
                                 'datetime':{'$gte': datetime.datetime(trading_dt.year, trading_dt.month, trading_dt.day, 0, 0),
                                             '$lte': datetime.datetime(trading_dt.year, trading_dt.month, trading_dt.day, 23, 59)}},
                                sort=[('datetime', pymongo.ASCENDING)])
-        _d1=[]
-        _d2=[]
-        sep_time = datetime.time(18, 0)
-        for d in cursor:
-            if d['datetime'].time() <= sep_time:
-                _d1.append(d)
-            else:
-                _d2.append(d)
-        data = _d2 + _d1
-        trading_minutes = [d['datetime'] for d in data]
+
+        trading_minutes = [d['datetime'] for d in cursor]
 
         return trading_minutes
 

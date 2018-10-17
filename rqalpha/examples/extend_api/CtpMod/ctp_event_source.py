@@ -123,7 +123,6 @@ class CtpEventSource(AbstractEventSource):
                     exit_loop = True
                     # trading_minutes = self._get_trading_minutes(date)
                     for trading_dt in trading_minutes:
-                        print(trading_dt)
                         calendar_dt = trading_dt - datetime.timedelta(days=1) if trading_dt.time() > datetime.time(20, 0) else trading_dt
                         if last_dt is not None and calendar_dt < last_dt:
                             #
