@@ -9,6 +9,7 @@ from rqalpha.interface import AbstractMod
 from .DataSource import HKDataSource
 from .hkfuture_event_source import HKFutureEventSource
 from rqalpha.events import EventBus, EVENT
+from rqalpha.environment import Environment
 from rqalpha.api import *
 
 __config__ = {'host': 'localhost',
@@ -36,10 +37,10 @@ class HKDataMod(AbstractMod):
                                         EXECUTION_PHASE.ON_BAR,
                                         EXECUTION_PHASE.AFTER_TRADING,
                                         EXECUTION_PHASE.SCHEDULED)
-        def get_main_contract(date):  # 更新主力合约
-            contracts = get_future_contracts('HSI')
-
-            date_left = get_trading_dates(date, instruments(contracts[0]).maturity_date)
+        def get_main_contract(underlying):  # 更新主力合约
+            contracts = get_future_contracts(underlying)
+            env = Environment.get_instance()
+            date_left = get_trading_dates(env.trading_dt, instruments(contracts[0]).maturity_date)
 
             if len(date_left) <= 1:
                 CurrentMon_Contract = contracts[1]

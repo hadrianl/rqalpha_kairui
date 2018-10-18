@@ -23,6 +23,7 @@ from rqalpha.events import Event, EVENT
 from rqalpha.utils import get_account_type
 from rqalpha.utils.exception import CustomException, CustomError, patch_user_exc
 from rqalpha.utils.datetime_func import convert_int_to_datetime
+from functools import lru_cache
 from rqalpha.const import DEFAULT_ACCOUNT_TYPE
 from rqalpha.utils.i18n import gettext as _
 
@@ -88,13 +89,19 @@ class HKFutureEventSource(AbstractEventSource):
 
                 # trading_minutes = self._env.data_proxy.get_trading_minutes_for('HSI', day)
                 trading_minutes = self._get_trading_minutes(date)
-                if len(trading_minutes) == 0:
-                    print(f'交易日{day}无交易数据！')
-                    continue
-                trading_start_time = trading_minutes[0]
-                trading_end_time = trading_minutes[-1]
+                # if len(trading_minutes) == 0:
+                #     print(f'交易日{day}无交易数据！')
+                #     continue
+                # trading_start_time = trading_minutes[0]
+                # trading_end_time = trading_minutes[-1]
                 # dt_before_day_trading = date.replace(hour=8, minute=45)
-                dt_before_day_trading = trading_start_time.replace(hour=17, minute=0)
+                # dt_before_day_trading = trading_start_time.replace(hour=17, minute=0)
+
+                if before_trading_flag:
+                    before_trading_flag = False
+                    yield Event(EVENT.BEFORE_TRADING,
+                                calendar_dt=date,
+                                trading_dt=date)
 
                 while True:
                     if done:
@@ -112,11 +119,7 @@ class HKFutureEventSource(AbstractEventSource):
                             #
                             continue
 
-                        if before_trading_flag:
-                            before_trading_flag = False
-                            yield Event(EVENT.BEFORE_TRADING,
-                                        calendar_dt=calendar_dt - datetime.timedelta(minutes=15),
-                                        trading_dt=trading_dt - datetime.timedelta(minutes=15))
+
                         if self._universe_changed:
                             self._universe_changed = False
                             last_dt = calendar_dt
@@ -128,11 +131,11 @@ class HKFutureEventSource(AbstractEventSource):
                         done = True
 
                 # dt = date.replace(hour=15, minute=30)
-                dt = trading_end_time.replace(hour=16, minute=31)
+                dt = date.replace(hour=16, minute=31)
                 yield Event(EVENT.AFTER_TRADING, calendar_dt=dt, trading_dt=dt)
 
                 # dt = date.replace(hour=17, minute=0)
-                dt = trading_end_time.replace(hour=16, minute=45)
+                dt = date.replace(hour=16, minute=45)
                 yield Event(EVENT.SETTLEMENT, calendar_dt=dt, trading_dt=dt)
         elif frequency == "tick":
             data_proxy = self._env.data_proxy

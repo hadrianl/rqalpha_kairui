@@ -11,6 +11,7 @@ from rqalpha.const import COMMISSION_TYPE
 from rqalpha.api import logger
 from rqalpha.model.instrument import Instrument
 from rqalpha.model.snapshot import SnapshotObject
+from rqalpha.environment import Environment
 import pandas as pd
 import numpy as np
 import pymongo
@@ -18,6 +19,7 @@ import datetime
 from functools import lru_cache
 from collections import deque
 import re
+import time
 
 
 
@@ -34,13 +36,26 @@ class HKDataSource(AbstractDataSource):
 
     def current_snapshot(self, instrument, frequency, dt):
         order_book_id = instrument.order_book_id
-        Collection = self._db.future_1min
-        _from = self.get_trading_minutes_for(instrument, datetime.datetime(dt.year, dt.month, dt.day))[0]
-        cursor = Collection.find({'code': order_book_id, "datetime": {'$gte': _from , '$lte': dt}, 'type': '1min'},
-                                 ['datetime', 'open', 'high', 'low', 'close', 'volume'],
-                                 sort=[('datetime', pymongo.ASCENDING)])
-        data = [d for d in cursor]
+        Collection = self._db.future_1min_
+        cursor = Collection.find({'code': order_book_id, "datetime": {'$lte': dt}},
+                                 ['datetime', 'open', 'high', 'low', 'close', 'volume', 'trade_date'],
+                                 sort=[('datetime', pymongo.DESCENDING)]).batch_size(300)
+        trade_date = None
+        data = []
+        for d in cursor:
+            if trade_date is None:
+                trade_date = d['trade_date']
+            if d['trade_date'] == trade_date:
+                data.append(d)
+            else:
+                pre_close = d
+                cursor.close()
+                data.reverse()
+                break
+
         df = pd.DataFrame(data)
+
+
         if not df.empty:
             _datetime = df['datetime'].iloc[-1].timestamp()
             _open = df['open'].iloc[0]
@@ -52,11 +67,7 @@ class HKDataSource(AbstractDataSource):
             _datetime = dt.timestamp()
             _open, _high, _low, _last, _volume = 0, 0, 0, 0, 0
 
-        pre_close_raw = Collection.find_one({'code': order_book_id, 'type': '1min', 'datetime': {'$lt': _from}},
-                                                 projection=['close', 'datetime'], sort=[('datetime', pymongo.DESCENDING)])
-        _pre_close = pre_close_raw['close']
-        _data = {'datetime': _datetime, 'open': _open, 'high': _high, 'low': _low, 'last': _last, 'volume': _volume, 'pre_close': _pre_close}
-
+        _data = {'datetime': _datetime, 'open': _open, 'high': _high, 'low': _low, 'last': _last, 'volume': _volume, 'pre_close': pre_close['close']}
         return SnapshotObject(instrument, _data, dt)
 
     @lru_cache(maxsize=1)
