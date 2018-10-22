@@ -102,10 +102,10 @@ class HKDataSource(AbstractDataSource):
 
     def get_bar(self, instrument, dt, frequency):
         order_book_id = instrument.order_book_id
-        Collection = self._db.future_1min
+        Collection = self._db.future_1min_
         if frequency in ['1m', '1min']:
             data = Collection.find_one(
-                {'code': order_book_id, "datetime": dt, 'type': '1min'})
+                {'code': order_book_id, "datetime": dt})
         else:
             data = None
 
