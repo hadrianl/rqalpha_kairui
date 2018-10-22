@@ -41,10 +41,11 @@ class DataVisualMod(AbstractMod):
         self.CLI = set()
         self._data_queue = Queue()
 
-        env.event_bus.add_listener(EVENT.POST_BAR, self._pub_bar)
+        # env.event_bus.add_listener(EVENT.POST_BAR, self._pub_bar)
         env.event_bus.add_listener(EVENT.POST_BAR, self._pub_account)
         # env.event_bus.add_listener(EVENT.POST_BAR, self._pub_position)
         env.event_bus.add_listener(EVENT.TRADE, self._pub_trade)
+        env.event_bus.add_listener(EVENT.SETTLEMENT, self._pub_settlement)
         self._init_websocket_server()
         self.ps = subprocess.Popen(f'python {os.path.join(os.path.dirname(__file__), "VisualApp.py")} {self._host} {self._port}')
 
@@ -93,8 +94,28 @@ class DataVisualMod(AbstractMod):
         for p in positions:
             _pos = properties(positions[p])  # todo:性能优化
             _pos['topic'] = 'position'
+            for i, op in enumerate(_pos['open_orders']):
+                op = properties(op)
+                op['trading_datetime'] = str(op['trading_datetime'])
+                op['datetime'] = str(op['datetime'])
+                op['side'] = str(op['side'])
+                op['position_effect'] = str(op['position_effect'])
+                op['status'] = str(op['status'])
+                op['type'] = str(op['type'])
+                _pos['open_orders'][i] = op
             _pos = json.dumps(_pos)
             self._data_queue.put(_pos)
+
+    def _pub_settlement(self, event):
+        account = Environment.get_instance().portfolio.accounts['FUTURE']
+        settlement_dt = event.trading_dt
+        _data = {'topic': 'settlement',
+                 'datetime': str(settlement_dt.date()),
+                 'total_value': account.total_value,
+                 'daily_pnl': account.daily_pnl,
+                 'transaction_cost': account.transaction_cost}
+        _data = json.dumps(_data)
+        self._data_queue.put(_data)
 
     # def _pub_position(self, POST_BAR):
     #     account = Environment.get_instance().portfolio.accounts['FUTURE']
