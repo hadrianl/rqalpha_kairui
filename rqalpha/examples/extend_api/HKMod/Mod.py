@@ -14,7 +14,9 @@ from rqalpha.api import *
 
 __config__ = {'host': 'localhost',
               'db': 'HKFuture',
-              'port': 27017}
+              'port': 27017,
+              'user': None,
+              'pwd': None}
 
 
 class HKDataMod(AbstractMod):
@@ -23,7 +25,7 @@ class HKDataMod(AbstractMod):
 
     def start_up(self, env, mod_config):
         env.set_event_source(HKFutureEventSource(env))
-        env.set_data_source(HKDataSource(mod_config.host, mod_config.db, mod_config.port))
+        env.set_data_source(HKDataSource(mod_config.host, mod_config.db, mod_config.port, mod_config.user, mod_config.pwd))
 
 
     def _inject_api(self):
@@ -48,6 +50,13 @@ class HKDataMod(AbstractMod):
                 CurrentMon_Contract = contracts[0]
 
             return CurrentMon_Contract
+
+        @export_as_api
+        @ExecutionContext.enforce_phase(EXECUTION_PHASE.BEFORE_TRADING)
+        def get_trading_minutes(date):
+            env = Environment.get_instance()
+            trading_minutes = env.event_source._get_trading_minutes(date)
+            return trading_minutes
 
 
     def tear_down(self, code, exception=None):

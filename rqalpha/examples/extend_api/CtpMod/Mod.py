@@ -14,7 +14,9 @@ from rqalpha.environment import Environment
 
 __config__ = {'host': '192.168.2.226',
               'db': 'Future',
-              'port': 27017}
+              'port': 27017,
+              'user': None,
+              'pwd': None}
 
 
 class CTPDataMod(AbstractMod):
@@ -25,7 +27,7 @@ class CTPDataMod(AbstractMod):
         self._config = mod_config
         self._env = env
         env.set_event_source(CtpEventSource(env))
-        env.set_data_source(CTPDataSource(mod_config.host, mod_config.db, mod_config.port))
+        env.set_data_source(CTPDataSource(mod_config.host, mod_config.db, mod_config.port, mod_config.user, mod_config.pwd))
 
     def _inject_extend_api(self):
         from rqalpha import export_as_api

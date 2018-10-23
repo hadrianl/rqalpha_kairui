@@ -23,10 +23,14 @@ from dateutil import parser
 import datetime as dt
 
 class Future:
-    def __init__(self, host='192.168.2.226', port=27017, db='Future'):
+    def __init__(self, host='192.168.2.226', port=27017, db='Future', user=None, pwd=None):
         self._mongodb_host = host
         self._mongodb_port = port
         self._conn = pmg.MongoClient(f'mongodb://{host}:{port}/')
+        if user and pwd:
+            self._user = user
+            admin_db = self._conn.get_database('admin')
+            admin_db.authenticate(user, pwd)
         self._db = self._conn.get_database(db)
         self._col = self._db.get_collection('future_1min')
 

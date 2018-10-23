@@ -83,8 +83,12 @@ YIELD = {
 
 
 class CTPDataSource(AbstractDataSource):
-    def __init__(self, host, db, port=27017):
+    def __init__(self, host, db, port=27017, user=None, pwd=None):
         self._conn = pymongo.MongoClient(f'mongodb://{host}:{port}/')
+        if user and pwd:
+            self._user = user
+            admin_db = self._conn.get_database('admin')
+            admin_db.authenticate(user, pwd)
         self._db = self._conn.get_database(db)
         # self._data_fetcher = Future(host, port, db)
 

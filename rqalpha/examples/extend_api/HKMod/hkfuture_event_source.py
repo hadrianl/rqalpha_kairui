@@ -56,6 +56,7 @@ class HKFutureEventSource(AbstractEventSource):
             trading_minutes.update(self._env.data_proxy.get_trading_minutes_for(order_book_id, trading_date))
         return set([minute for minute in trading_minutes])
 
+    @lru_cache(1)
     def _get_trading_minutes(self, trading_date):
         trading_minutes = set()
         for account_type in self._config.base.accounts:
@@ -87,15 +88,7 @@ class HKFutureEventSource(AbstractEventSource):
                 last_dt = None
                 done = False
 
-                # trading_minutes = self._env.data_proxy.get_trading_minutes_for('HSI', day)
                 trading_minutes = self._get_trading_minutes(date)
-                # if len(trading_minutes) == 0:
-                #     print(f'交易日{day}无交易数据！')
-                #     continue
-                # trading_start_time = trading_minutes[0]
-                # trading_end_time = trading_minutes[-1]
-                # dt_before_day_trading = date.replace(hour=8, minute=45)
-                # dt_before_day_trading = trading_start_time.replace(hour=17, minute=0)
 
                 if before_trading_flag:
                     before_trading_flag = False
