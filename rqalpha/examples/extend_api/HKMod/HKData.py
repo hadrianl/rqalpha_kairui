@@ -32,8 +32,8 @@ class BaseData:
         raise NotImplementedError
 
 class HKFuture(BaseData):
-    def __init__(self, host='192.168.2.226', port=27017, db='HKFuture'):
-        super(HKFuture, self).__init__(host, port, db)
+    def __init__(self, host='192.168.2.226', port=27017, db='HKFuture', user=None, pwd=None):
+        super(HKFuture, self).__init__(host, port, db, user, pwd)
 
     def get_bars(self, code, fields=None, start=None, end=None, ktype='1m'):
         '''

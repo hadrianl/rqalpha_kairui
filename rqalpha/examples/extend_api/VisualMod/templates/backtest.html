@@ -247,7 +247,7 @@ var extra = new Object();
 var is_huatu = true;
 var size = $('#message').val()-0;
 var code = $('#code').val();
-var max_bar = 1000;
+var max_bar = 200;
 var is_first = true;
 var draw_counts = 0;
 var vm = new Vue({
@@ -257,6 +257,7 @@ data:{
 bar: bar,
 account: {},
 position: {},
+settlement: [],
 trade: [],
 codes: []},
 <!--computed: {-->
@@ -318,140 +319,147 @@ option = {
         }
     ],
     series : [
-        {
-            name: 'KLine',
-            type: 'k',
-            dimensions: ['date', 'open', 'close', 'highest', 'lowest'],
-            encode: {
-                x: 'date',
-                y: ['open', 'close', 'highest', 'lowest']
-                },
-            data: [ // 开盘，收盘，最低，最高
-            ],
-            zlevel: 0,
-            markPoint: {
-                label: {
-                    normal: {
-                        formatter: function (param) {
-                            return param != null ? Math.round(param.value) : '';
-                        },
-                    position: 'right',
-                    fontSize: 8
-                    }
-                },
-                data: [
-                    {
-                        name: 'highest value',
-                        type: 'max',
-                        valueDim: 'highest'
-                    },
-                    {
-                        name: 'lowest value',
-                        type: 'min',
-                        valueDim: 'lowest'
-                    }
-                ],
-                tooltip: {
-                    formatter: function (param) {
-                        return param.name + '<br>' + (param.data.coord || '');
-                    }
-                }
-            }
-        },
-        {
-            name: 'MA5',
-            type: 'line',
-            data: [],
-            smooth: true,
-            zlevel: 1,
-            lineStyle: {
-                normal: {opacity: 0.5}
-                }
-        },
-                {
-            name: 'MA10',
-            type: 'line',
-            data: [],
-            smooth: true,
-            zlevel: 1,
-            lineStyle: {
-                normal: {opacity: 0.5}
-                }
-        },
-                {
-            name: 'MA30',
-            type: 'line',
-            data: [],
-            smooth: true,
-            zlevel: 1,
-            lineStyle: {
-                normal: {opacity: 0.5}
-                }
-        },
-                {
-            name: 'MA60',
-            type: 'line',
-            data: [],
-            smooth: true,
-            zlevel: 1,
-            lineStyle: {
-                normal: {opacity: 0.5}
-                }
-        },
+        <!--{-->
+            <!--name: 'KLine',-->
+            <!--type: 'k',-->
+            <!--dimensions: ['date', 'open', 'close', 'highest', 'lowest'],-->
+            <!--encode: {-->
+                <!--x: 'date',-->
+                <!--y: ['open', 'close', 'highest', 'lowest']-->
+                <!--},-->
+            <!--data: [ // 开盘，收盘，最低，最高-->
+            <!--],-->
+            <!--zlevel: 0,-->
+            <!--markPoint: {-->
+                <!--label: {-->
+                    <!--normal: {-->
+                        <!--formatter: function (param) {-->
+                            <!--return param != null ? Math.round(param.value) : '';-->
+                        <!--},-->
+                    <!--position: 'right',-->
+                    <!--fontSize: 8-->
+                    <!--}-->
+                <!--},-->
+                <!--data: [-->
+                    <!--{-->
+                        <!--name: 'highest value',-->
+                        <!--type: 'max',-->
+                        <!--valueDim: 'highest'-->
+                    <!--},-->
+                    <!--{-->
+                        <!--name: 'lowest value',-->
+                        <!--type: 'min',-->
+                        <!--valueDim: 'lowest'-->
+                    <!--}-->
+                <!--],-->
+                <!--tooltip: {-->
+                    <!--formatter: function (param) {-->
+                        <!--return param.name + '<br>' + (param.data.coord || '');-->
+                    <!--}-->
+                <!--}-->
+            <!--}-->
+        <!--},-->
+        <!--{-->
+            <!--name: 'MA5',-->
+            <!--type: 'line',-->
+            <!--data: [],-->
+            <!--smooth: true,-->
+            <!--zlevel: 1,-->
+            <!--lineStyle: {-->
+                <!--normal: {opacity: 0.5}-->
+                <!--}-->
+        <!--},-->
+                <!--{-->
+            <!--name: 'MA10',-->
+            <!--type: 'line',-->
+            <!--data: [],-->
+            <!--smooth: true,-->
+            <!--zlevel: 1,-->
+            <!--lineStyle: {-->
+                <!--normal: {opacity: 0.5}-->
+                <!--}-->
+        <!--},-->
+                <!--{-->
+            <!--name: 'MA30',-->
+            <!--type: 'line',-->
+            <!--data: [],-->
+            <!--smooth: true,-->
+            <!--zlevel: 1,-->
+            <!--lineStyle: {-->
+                <!--normal: {opacity: 0.5}-->
+                <!--}-->
+        <!--},-->
+                <!--{-->
+            <!--name: 'MA60',-->
+            <!--type: 'line',-->
+            <!--data: [],-->
+            <!--smooth: true,-->
+            <!--zlevel: 1,-->
+            <!--lineStyle: {-->
+                <!--normal: {opacity: 0.5}-->
+                <!--}-->
+        <!--},-->
+        {name: '结算',
+        type: 'line',
+        data: []}
     ]
 }
 
 myChart.showLoading();
 
-function addBar(data){
-    if(is_first){
-        setCode(data.code);
-        is_first = false;
-    }
+<!--function addBar(data){-->
+    <!--if(is_first){-->
+        <!--setCode(data.code);-->
+        <!--is_first = false;-->
+    <!--}-->
 
-    vm.codes = Object.keys(bar);
-    if(data.code in bar){
-        bar[data.code].push([data.open, data.close, data.high, data.low]);
-        categoryData[data.code].push(data.datetime);
-    }else{
-        bar[data.code] = [];
-        categoryData[data.code] =[];
-        bar[data.code].push([data.open, data.close, data.high, data.low]);
-        categoryData[data.code].push(data.datetime);
-    }
+    <!--vm.codes = Object.keys(bar);-->
+    <!--if(data.code in bar){-->
+        <!--bar[data.code].push([data.open, data.close, data.high, data.low]);-->
+        <!--categoryData[data.code].push(data.datetime);-->
+    <!--}else{-->
+        <!--bar[data.code] = [];-->
+        <!--categoryData[data.code] =[];-->
+        <!--bar[data.code].push([data.open, data.close, data.high, data.low]);-->
+        <!--categoryData[data.code].push(data.datetime);-->
+    <!--}-->
 
-    <!--bar_data = {d.code:[d.datetime, d.open, d.close, d.high, d.low]};-->
-    <!--categoryData.push(data[0]);-->
-    <!--bar.push(data.slice(1));-->
-    x = categoryData[code];
-    option.xAxis[0].data=x.slice(-max_bar);
-    option.series[0].data=bar[code].slice(-max_bar);
-    option.dataZoom.startValue=x[x.length-size];
-    option.dataZoom.endValue=x[x.length-1];
+    <!--&lt;!&ndash;bar_data = {d.code:[d.datetime, d.open, d.close, d.high, d.low]};&ndash;&gt;-->
+    <!--&lt;!&ndash;categoryData.push(data[0]);&ndash;&gt;-->
+    <!--&lt;!&ndash;bar.push(data.slice(1));&ndash;&gt;-->
+    <!--if(bar[data.code].length >= 300){-->
+        <!--bar[data.code].pop();-->
+        <!--categoryData[data.code].pop()-->
+    <!--}-->
+    <!--x = categoryData[code];-->
+    <!--option.xAxis[0].data=x.slice(-max_bar);-->
+    <!--option.series[0].data=bar[code].slice(-max_bar);-->
+    <!--option.dataZoom.startValue=x[x.length-size];-->
+    <!--option.dataZoom.endValue=x[x.length-1];-->
 
 
-    draw_counts += 1;
-    if(is_huatu&&draw_counts >=vm.codes.length*60){
-        myChart.setOption(option);
-        draw_counts = 0;
-    }
-}
+    <!--draw_counts += 1;-->
+    <!--if(is_huatu&&draw_counts >=vm.codes.length*60){-->
+        <!--myChart.setOption(option);-->
+        <!--draw_counts = 0;-->
+    <!--}-->
+<!--}-->
 
 
 function addTrade(trade_data){
     data = [trade_data.trading_datetime, trade_data.last_price, trade_data.side];
     vm.trade.unshift(trade_data);
 
-    var trade_point = {
-                    name: 'trade',
-                    symbol: 'triangle',
-                    symbolSize: 10,
-                    coord: [data[0], data[1]],
-                    value: data[1],
-                    itemStyle: {
-                        normal: {color: 'rgb(41,60,85)'}
-                    }
-                    };
+    <!--var trade_point = {-->
+                    <!--name: 'trade',-->
+                    <!--symbol: 'triangle',-->
+                    <!--symbolSize: 10,-->
+                    <!--coord: [data[0], data[1]],-->
+                    <!--value: data[1],-->
+                    <!--itemStyle: {-->
+                        <!--normal: {color: 'rgb(41,60,85)'}-->
+                    <!--}-->
+                    <!--};-->
 
     if(data[2]=='SELL'){
         trade_point.itemStyle.normal.color = 'rgb(0,255,0)';
@@ -461,52 +469,18 @@ function addTrade(trade_data){
         trade_point.symbolRotate = 0;
     }
 
-    if(trade_data.order_book_id in trade){
-        trade[trade_data.order_book_id].push(trade_point);
-    }else{
-        trade[trade_data.order_book_id] = [];
-        trade[trade_data.order_book_id].push(trade_point);
-    }
+    <!--if(trade_data.order_book_id in trade){-->
+        <!--trade[trade_data.order_book_id].push(trade_point);-->
+    <!--}else{-->
+        <!--trade[trade_data.order_book_id] = [];-->
+        <!--trade[trade_data.order_book_id].push(trade_point);-->
+    <!--}-->
 
-    option.series[0].markPoint.data = trade[code];
+    <!--option.series[0].markPoint.data = trade[code];-->
 
     <!--if(is_huatu){-->
         <!--myChart.setOption(option);-->
     <!--}-->
-}
-
-function addExtra(data){
-
-    <!--_data = [data.datetime, data.topic_vals.values()];-->
-    if(data.code in extra){
-        <!--extra[data.code].push(_data);-->
-    }else{
-        extra[data.code] = {};
-        <!--extra[data.code].push(_data);-->
-    }
-
-
-    for(t in data.topic_vals){
-        if(t in extra[data.code]){
-            extra[data.code][t].push(data.topic_vals[t]);
-        }else{
-            extra[data.code][t] = [];
-            extra[data.code][t].push(data.topic_vals[t]);
-        }
-    }
-    _current_extra = extra[code]
-    for (topic in _current_extra){
-        if (topic=='MA5'){
-            option.series[1].data = _current_extra[topic].slice(-max_bar)
-        }else if (topic=='MA10'){
-            option.series[2].data = _current_extra[topic].slice(-max_bar)
-        }else if (topic=='MA30'){
-            option.series[3].data = _current_extra[topic].slice(-max_bar)
-        }else if (topic=='MA60'){
-            option.series[4].data = _current_extra[topic].slice(-max_bar)
-        }
-    }
-
 }
 
 function updateAccount(data){
@@ -515,6 +489,14 @@ function updateAccount(data){
 
 function updatePosition(data){
     vm.position[data['order_book_id']] = data;
+}
+
+function settlement_plot(data){
+    vm.settlement.push(data);
+    option.xAxis[0].data.push(data.datetime);
+    option.series[0].data.push(data.total_value);
+
+    myChart.setOption(option);
 }
 
 function setCode(c){
@@ -541,16 +523,16 @@ $(function () {
             socket.onmessage = function (e) {
                 <!--console.log('message: ' + e.data);//打印出服务端返回过来的数据-->
                 var d= $.parseJSON(e.data);
-                if(d.topic=='bar'){
-                    addBar(d);
+                if(d.topic==''){
+                    <!--addBar(d);-->
                 }else if(d.topic=='trade'){
                     addTrade(d);
                 }else if(d.topic=='account'){
                     updateAccount(d);
                 }else if(d.topic=='position'){
                     updatePosition(d);
-                }else if(d.topic=='extra'){
-                    addExtra(d);
+                }else if(d.topic=='settlement'){
+                    settlement_plot(d);
                 }
             };
             // Call onopen directly if socket is already open
