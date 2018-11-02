@@ -5,6 +5,7 @@
 # @File    : util
 
 import re
+from ctypes import Array
 
 def _check_ktype(ktype):
     _ktype = re.findall(r'^(\d+)([a-zA-Z]+)$', ktype)[0]
@@ -25,6 +26,18 @@ def _check_ktype(ktype):
         raise Exception(f'不支持{ktype}类型, 请输入正确的ktype!')
 
     return f'{_n}{_t}'
+
+def _convert_from_ctype(data):
+    data_dict = {}
+    for k, t in data._fields_:
+        v = getattr(data, k)
+        if isinstance(v, bytes):
+            data_dict[k] = v.decode('GBK')
+        elif isinstance(v, Array):
+            data_dict[k] = [d for d in v]
+        else:
+            data_dict[k] = v
+    return data_dict
 
 CODE_SUFFIX = ['1701', '1702', '1703', '1704', '1705', '1706', '1707', '1708', '1709', '1710', '1711', '1712',
                '1801', '1802', '1803', '1804', '1805', '1806', '1807', '1808', '1809', '1810', '1811', '1812']

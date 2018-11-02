@@ -6,8 +6,7 @@
 # @License : (C) Copyright 2013-2017, 凯瑞投资
 
 from rqalpha.interface import AbstractMod
-from .DataSource import HKDataSource
-from .hkfuture_event_source import HKFutureEventSource
+
 from rqalpha.events import EventBus, EVENT
 from rqalpha.environment import Environment
 from rqalpha.api import *
@@ -24,8 +23,19 @@ class HKDataMod(AbstractMod):
         self._inject_api()
 
     def start_up(self, env, mod_config):
-        env.set_event_source(HKFutureEventSource(env))
-        env.set_data_source(HKDataSource(mod_config.host, mod_config.db, mod_config.port, mod_config.user, mod_config.pwd))
+        if env.config.base.run_type in (RUN_TYPE.PAPER_TRADING, RUN_TYPE.LIVE_TRADING):
+            from .realtime_event_source import RealtimeEventSource
+            from .realtime_data_source import RealtimeDataSource
+            from .realtime_broker import RealtimeBroker
+            env.set_event_source(RealtimeEventSource(mod_config))
+            env.set_data_source(RealtimeDataSource(mod_config.db_user, mod_config.db_pwd, mod_config.db, mod_config.db_host))
+            env.data_source.bar_trigger_thread.start()
+            env.set_broker(RealtimeBroker(env, mod_config.sp_info))
+        else:
+            from .DataSource import HKDataSource
+            from .hkfuture_event_source import HKFutureEventSource
+            env.set_event_source(HKFutureEventSource(env))
+            env.set_data_source(HKDataSource(mod_config.host, mod_config.db, mod_config.port, mod_config.user, mod_config.pwd))
 
 
     def _inject_api(self):
