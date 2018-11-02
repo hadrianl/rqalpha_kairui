@@ -104,7 +104,6 @@ class RealtimeBroker(AbstractBroker):
 
     def update_account(self, acc_info):
         self.account = _convert_from_ctype(acc_info)
-        print(self.account)
 
     def on_order(self, order):
         _order = _convert_from_ctype(order)

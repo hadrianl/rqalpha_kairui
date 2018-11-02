@@ -23,7 +23,7 @@ def data_server(config_path):
     Multiple RQAlpha instance can use single market data service.
     """
 
-    from .realtime_data_server import RealtimeDataServer
+    from rqalpha.examples.extend_api.HKMod.realtime_data_server import RealtimeDataServer
     import configparser
 
     conf = configparser.ConfigParser()

@@ -86,8 +86,6 @@ class RealtimeEventSource(AbstractEventSource):
             #     time.sleep(60)
             #     continue
 
-            time.sleep(60)
-
             d = datetime.datetime.now()
 
             if d.strftime("%H:%M:%S") >= "08:45:00" and d.date() > self.before_trading_fire_date:
@@ -100,6 +98,7 @@ class RealtimeEventSource(AbstractEventSource):
                 self.event_queue.put((d, EVENT.SETTLEMENT))
                 self.settlement_fire_date = d.date()
 
+            time.sleep(60)
             # if is_tradetime_now():
             #     self.event_queue.put((dt, EVENT.BAR))
 

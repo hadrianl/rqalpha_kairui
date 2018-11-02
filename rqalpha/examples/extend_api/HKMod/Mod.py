@@ -28,7 +28,7 @@ class HKDataMod(AbstractMod):
             from .realtime_data_source import RealtimeDataSource
             from .realtime_broker import RealtimeBroker
             env.set_event_source(RealtimeEventSource(mod_config))
-            env.set_data_source(RealtimeDataSource(mod_config.db_user, mod_config.db_pwd, mod_config.db, mod_config.db_host))
+            env.set_data_source(RealtimeDataSource(mod_config.db_info, mod_config.server_info))
             env.data_source.bar_trigger_thread.start()
             env.set_broker(RealtimeBroker(env, mod_config.sp_info))
         else:

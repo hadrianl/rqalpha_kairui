@@ -46,16 +46,16 @@ from rqalpha.model.instrument import Instrument
 from .util import _convert_from_ctype
 
 class RealtimeDataSource(AbstractDataSource):
-    def __init__(self, db_user=None, db_pwd=None, db='HKFuture',db_host='192.168.2.226', server_host='localhost', server_port=6868):
-        mongo_cli = pmg.MongoClient(db_host)
-        if db_user and db_pwd:
+    def __init__(self, db_info, server_info):
+        mongo_cli = pmg.MongoClient(db_info.host)
+        if db_info.user and db_info.pwd:
             admin_db = mongo_cli.get_database('admin')
-            admin_db.authenticate(db_user, db_pwd)
-        self._db = mongo_cli.get_database(db)
+            admin_db.authenticate(db_info.user, db_info.pwd)
+        self._db = mongo_cli.get_database(db_info.dbname)
         self._col = self._db.get_collection('realtime_future_1min_')
         self._col.create_index([('datetime', pmg.DESCENDING), ('code', pmg.ASCENDING)], unique=True)
         self._col.create_index([('code', pmg.ASCENDING)])
-        self.bar_trigger_thread = Thread(target=self.trigger_bar_from_server, args=(server_host, server_port))
+        self.bar_trigger_thread = Thread(target=self.trigger_bar_from_server, args=(server_info.host, server_info.port))
         self.bar_trigger_thread.setDaemon(True)
 
     def trigger_bar_from_server(self, host, port):
