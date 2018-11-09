@@ -101,12 +101,18 @@ class RealtimeDataServer:
             self._price_queues[price_dict['ProdCode']].append(price_dict)
             api_logger.info(f'{price_dict}')
 
+        @on_connecting_reply  # 连接状态改变时调用
+        def connecting_reply(host_id, con_status):
+            api_logger.info(f'<连接>{HOST_TYPE[host_id]}状态改变--{HOST_CON_STATUS[con_status]}')
+            # global login_flag
+
         self.on_login_reply = login_reply
         self.inst_list_reply = inst_list_reply
         self.product_list_by_code_reply = product_list_by_code_reply
         self.business_date_reply = business_date_reply
         self.ticker_update = ticker_update
         self.price_update = price_update
+        self.connecting_reply = connecting_reply
 
     def _init_subscribe(self):
         contract_col = self._db.get_collection('realtime_future_contract_info')

@@ -9,6 +9,7 @@ from rqalpha.interface import AbstractMod
 
 from rqalpha.events import EventBus, EVENT
 from rqalpha.environment import Environment
+from rqalpha.const import ORDER_TYPE, SIDE
 from rqalpha.api import *
 
 __config__ = {'host': 'localhost',
@@ -20,7 +21,12 @@ __config__ = {'host': 'localhost',
 
 class HKDataMod(AbstractMod):
     def __init__(self):
-        self._inject_api()
+        env = Environment.get_instance()
+        if env.config.base.run_type in (RUN_TYPE.PAPER_TRADING, RUN_TYPE.LIVE_TRADING):
+            self._inject_realtime_api()
+        else:
+            self._inject_api()
+
 
     def start_up(self, env, mod_config):
         if env.config.base.run_type in (RUN_TYPE.PAPER_TRADING, RUN_TYPE.LIVE_TRADING):
@@ -67,6 +73,37 @@ class HKDataMod(AbstractMod):
             env = Environment.get_instance()
             trading_minutes = env.event_source._get_trading_minutes(date)
             return trading_minutes
+
+    def _inject_realtime_api(self):
+        from rqalpha import export_as_api
+        from rqalpha.execution_context import ExecutionContext
+        from rqalpha.const import EXECUTION_PHASE
+
+        @export_as_api
+        @ExecutionContext.enforce_phase(EXECUTION_PHASE.ON_BAR,
+                                        EXECUTION_PHASE.ON_TICK,
+                                        EXECUTION_PHASE.SCHEDULED,
+                                        EXECUTION_PHASE.GLOBAL)
+        def realtime_order(id_or_ins, quantity, side, price=0, style=ORDER_TYPE.MARKET):
+            order = {'order_book_id': id_or_ins, 'quantity': quantity, 'side': side, 'price': price, 'style': style}
+            env = Environment.get_instance()
+            env.broker.submit_order(order)
+
+        @export_as_api
+        @ExecutionContext.enforce_phase(EXECUTION_PHASE.ON_BAR,
+                                        EXECUTION_PHASE.ON_TICK,
+                                        EXECUTION_PHASE.SCHEDULED,
+                                        EXECUTION_PHASE.GLOBAL)
+        def realtime_buy(id_or_ins, quantity, price=0, style=ORDER_TYPE.MARKET):
+            realtime_order(id_or_ins, quantity, SIDE.BUY, price, style)
+
+        @export_as_api
+        @ExecutionContext.enforce_phase(EXECUTION_PHASE.ON_BAR,
+                                        EXECUTION_PHASE.ON_TICK,
+                                        EXECUTION_PHASE.SCHEDULED,
+                                        EXECUTION_PHASE.GLOBAL)
+        def realtime_sell(id_or_ins, quantity, price=0, style=ORDER_TYPE.MARKET):
+            realtime_order(id_or_ins, quantity, SIDE.SELL, price, style)
 
 
     def tear_down(self, code, exception=None):
