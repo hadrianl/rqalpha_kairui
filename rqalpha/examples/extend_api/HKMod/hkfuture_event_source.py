@@ -81,7 +81,7 @@ class HKFutureEventSource(AbstractEventSource):
 
                 yield Event(EVENT.AFTER_TRADING, calendar_dt=dt_after_trading, trading_dt=dt_after_trading)
                 yield Event(EVENT.SETTLEMENT, calendar_dt=dt_settlement, trading_dt=dt_settlement)
-        elif frequency == '1m':
+        elif frequency in ('1min', '5min', '15min', '30min', '60min'):
             for day in self._env.data_proxy.get_trading_dates(start_date, end_date):
                 before_trading_flag = True
                 date = day.to_pydatetime()

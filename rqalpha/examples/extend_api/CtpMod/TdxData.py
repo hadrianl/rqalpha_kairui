@@ -92,7 +92,6 @@ class Future:
             return resampled
 
         resampled_df = df.groupby(by= lambda x: x.date()).apply(_resample)
-
         if isinstance(resampled_df.index, pd.MultiIndex):
             resampled_df.reset_index(0, drop=True, inplace=True)
 
@@ -102,7 +101,6 @@ class Future:
             fields = [field for field in resampled_df.columns]
         else:
             fields = [field for field in fields if field in resampled_df.columns]
-
 
         return resampled_df.loc[:, fields].T.as_matrix()
 

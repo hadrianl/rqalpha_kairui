@@ -34,7 +34,7 @@ class CTPDataMod(AbstractMod):
         from rqalpha.execution_context import ExecutionContext
         from rqalpha.const import EXECUTION_PHASE
         mod_config = Environment.get_instance().config.mod.extend_data_source_mod
-        self._data_fetcher = Future(mod_config.host, mod_config.port, mod_config.db)
+        self._data_fetcher = Future(mod_config.host, mod_config.port, mod_config.db, mod_config.user, mod_config.pwd)
         @export_as_api
         @ExecutionContext.enforce_phase(
                                 EXECUTION_PHASE.ON_INIT,
@@ -43,7 +43,7 @@ class CTPDataMod(AbstractMod):
                                 EXECUTION_PHASE.AFTER_TRADING,
                                 EXECUTION_PHASE.SCHEDULED)
         def get_bar(code, fields=None, start=None, end=None, ktype='1m'):
-            return self._data_fetcher.get_bar(code, fields, start, end, ktype)
+            return self._data_fetcher.get_bars(code, fields, start, end, ktype)
 
     def tear_down(self, code, exception=None):
         ...

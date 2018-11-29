@@ -33,10 +33,10 @@ class HKDataSource(AbstractDataSource):
         self._db = self._conn.get_database(db)
 
     def available_data_range(self, frequency):
-        if frequency == '1m':
-            Collection = self._db.future_1min
-            _end_stamp = Collection.find_one({'type': '1min'}, projection=['date_stamp'], sort=[('datetime', pymongo.DESCENDING)])['date_stamp']
-            return (datetime.date(2011, 1, 1), datetime.date.fromtimestamp(_end_stamp) - datetime.timedelta(days=1))
+        self.freq = frequency
+        Collection = self._db.future_1min
+        _end_stamp = Collection.find_one({'type': '1min'}, projection=['date_stamp'], sort=[('datetime', pymongo.DESCENDING)])['date_stamp']
+        return (datetime.date(2011, 1, 1), datetime.date.fromtimestamp(_end_stamp) - datetime.timedelta(days=1))
 
     def current_snapshot(self, instrument, frequency, dt):
         order_book_id = instrument.order_book_id
@@ -106,12 +106,12 @@ class HKDataSource(AbstractDataSource):
 
     def get_bar(self, instrument, dt, frequency):
         order_book_id = instrument.order_book_id
-        Collection = self._db.future_1min_
-        if frequency in ['1m', '1min']:
-            data = Collection.find_one(
-                {'code': order_book_id, "datetime": dt})
-        else:
-            data = None
+        Collection = self._db.get_collection(f'future_{frequency}_')
+        # if frequency in ['1m', '1min']:
+        data = Collection.find_one(
+            {'code': order_book_id, "datetime": dt})
+        # else:
+        #     data = None
 
         if data is None:
             # return super(SPDataSource, self).get_bar(instrument, dt, frequency)
@@ -162,27 +162,28 @@ class HKDataSource(AbstractDataSource):
 
     def get_trading_minutes_for(self, instrument, trading_dt):
         order_book_id = instrument.order_book_id
-        Collection = self._db.future_1min
+        Collection = self._db.get_collection(f'future_{self.freq}_')
         ds = trading_dt + datetime.timedelta(hours=9, minutes=14)
         de = trading_dt + datetime.timedelta(hours=16, minutes=30)
-        if Collection.find_one({'code': order_book_id, 'type': '1min', 'datetime': {'$gte': ds, '$lte': de}}) is None:
+        if Collection.find_one({'code': order_book_id, 'datetime': {'$gte': ds, '$lte': de}}) is None:
             return []
         else:
-            _d = Collection.find({'code': order_book_id, 'type': '1min', 'datetime':{'$gte': ds, '$lte': de}}, projection=['date_stamp', 'datetime'], sort=[('datetime', pymongo.DESCENDING)])
+            _d = Collection.find({'code': order_book_id, 'datetime':{'$gte': ds, '$lte': de}}, projection=['datetime'], sort=[('datetime', pymongo.DESCENDING)])
             d = [i['datetime'] for i in _d]
-            _bar_before_d = Collection.find_one({'code': order_book_id, 'type': '1min', 'datetime':{'$lt': ds}}, projection=['date_stamp', 'datetime'], sort=[('datetime', pymongo.DESCENDING)])
+            _bar_before_d = Collection.find_one({'code': order_book_id, 'datetime':{'$lt': ds}}, projection=['datetime'], sort=[('datetime', pymongo.DESCENDING)])
 
             if _bar_before_d is not None:
-                if datetime.time(17, 14) < _bar_before_d['datetime'].time() <= datetime.time(23, 59):
-                    _d_aht = Collection.find({'code': order_book_id, 'type': '1min',
-                                              'datetime':{'$gte': datetime.datetime.fromtimestamp(_bar_before_d['date_stamp']) + datetime.timedelta(hours=17, minutes=14),
-                                                          '$lte': datetime.datetime.fromtimestamp(_bar_before_d['date_stamp']) + datetime.timedelta(hours=23, minutes=59)}}, projection=['date_stamp', 'datetime'], sort=[('datetime', pymongo.DESCENDING)])
+                td = _bar_before_d['datetime']
+                if datetime.time(17, 14) < td.time() <= datetime.time(23, 59):
+                    _d_aht = Collection.find({'code': order_book_id,
+                                              'datetime':{'$gte': td.replace(hour=17, minute=14),
+                                                          '$lte': td.replace(hour=23, minute=59)}}, projection=['datetime'], sort=[('datetime', pymongo.DESCENDING)])
                     d_aht = [i['datetime'] for i in _d_aht]
                     d = d + d_aht
-                elif datetime.time(0, 0) < _bar_before_d['datetime'].time() <= datetime.time(2, 0):
-                    _d_aht = Collection.find({'code': order_book_id, 'type': '1min',
-                                              'datetime':{'$gte': datetime.datetime.fromtimestamp(_bar_before_d['date_stamp']) - datetime.timedelta(hours=6, minutes=46),
-                                                          '$lte': datetime.datetime.fromtimestamp(_bar_before_d['date_stamp']) + datetime.timedelta(hours=2, minutes=0)}}, projection=['date_stamp', 'datetime'], sort=[('datetime', pymongo.DESCENDING)])
+                elif datetime.time(0, 0) < td.time() <= datetime.time(2, 0):
+                    _d_aht = Collection.find({'code': order_book_id,
+                                              'datetime':{'$gte': td.replace(hour=0, minute=0) - datetime.timedelta(hours=6, minutes=46),
+                                                          '$lte': td.replace(hour=2, minute=0)}}, projection=['datetime'], sort=[('datetime', pymongo.DESCENDING)])
                     d_aht = [i['datetime'] for i in _d_aht]
                     d = d + d_aht
 

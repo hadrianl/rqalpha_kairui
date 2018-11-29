@@ -52,6 +52,7 @@ class HKFuture(BaseData):
 
         code = code.upper()
         trade_date = self.get_trading_dates(start, end, code=code)
+        print(trade_date)
 
         ktype = _check_ktype(ktype)
 

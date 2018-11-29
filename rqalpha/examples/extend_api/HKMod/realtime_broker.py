@@ -65,8 +65,24 @@ class RealtimeBroker(AbstractBroker):
             api_logger.info('<账户>'+
                         f'{acc_info.ClientId.decode()}信息--NAV:{acc_info.NAV}-BaseCcy:{acc_info.BaseCcy.decode()}-BuyingPower:{acc_info.BuyingPower}-CashBal:{acc_info.CashBal}')
 
+        @on_account_login_reply  # 普通客户登入回调
+        def account_login_reply(accNo, ret_code, ret_msg):
+            if ret_code == 0:
+                api_logger(f'{accNo.decode()}登入成功')
+            else:
+                api_logger(f'{accNo.decode()}登入失败--errcode:{ret_code}--errmsg:{ret_msg.decode()}')
+
+        @on_account_logout_reply  # 普通客户登出回调
+        def account_logout_reply(accNo, ret_code, ret_msg):
+            if ret_code == 0:
+                api_logger(f'{accNo.decode()}登出成功')
+            else:
+                api_logger(f'{accNo.decode()}登出失败--errcode:{ret_code}--errmsg:{ret_msg.decode()}')
+
         self.login_reply = login_reply
         self.account_info_push = account_info_push
+        self.account_login_reply = account_login_reply
+        self.account_logout_reply = account_logout_reply
 
         login()
         time.sleep(5)
@@ -110,12 +126,14 @@ class RealtimeBroker(AbstractBroker):
             api_logger.info(
                 f'即将发送订单请求--ProdCode:{order.ProdCode.decode()}-Price:{order.Price}-Qty:{order.Qty}-BuySell:{order.BuySell.decode()}')
 
+
         self.trade_ready_push = trade_ready_push
         self.account_position_push = account_position_push
         self.updated_account_position_push = updated_account_position_push
         self.order_report = order_report
         self.order_request_failed = order_request_failed
         self.order_before_send_report = order_before_send_report
+
 
         orders = get_orders_by_array()
         for order in orders:
@@ -287,10 +305,12 @@ class DataCache(object):
     def cache_position(self, pos):
         _pos = _convert_from_ctype(pos)
         self.pos[_pos['ProdCode']] = _pos
+        print(_pos)
 
     def cache_account(self, account):
         _account = _convert_from_ctype(account)
         self._account_dict = _account
+        print(_account)
 
     def cache_qry_order(self, order_cache):
         self._qry_order_cache = order_cache
@@ -299,6 +319,7 @@ class DataCache(object):
         _trade = _convert_from_ctype(trade)
         td = self.trades.setdefault(_trade['ProdCode'], [])
         td.append(_trade)
+        print(_trade)
 
     def get_cached_order(self, obj):
         try:
@@ -316,6 +337,7 @@ class DataCache(object):
     def cache_order(self, order):
         _order = _convert_from_ctype(order)
         self.orders[_order['ExtOrderNo']] = _order
+        print(_order)
 
     @property
     def positions(self):
