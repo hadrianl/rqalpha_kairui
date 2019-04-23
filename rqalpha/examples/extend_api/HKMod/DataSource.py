@@ -126,7 +126,7 @@ class HKDataSource(AbstractDataSource):
     def get_commission_info(self, instrument):
         order_book_id = instrument.order_book_id
         if 'HSI' in order_book_id:
-            commission_info = {'commission_type': COMMISSION_TYPE.BY_VOLUME, 'open_commission_ratio': 33.54, 'close_commission_ratio': 33.54, 'close_commission_today_ratio': 33.54}
+            commission_info = {'commission_type': COMMISSION_TYPE.BY_VOLUME, 'open_commission_ratio': 15.54, 'close_commission_ratio': 15.54, 'close_commission_today_ratio': 15.54}
         elif  'MHI' in order_book_id:
             commission_info = {'commission_type': COMMISSION_TYPE.BY_VOLUME, 'open_commission_ratio': 13.6,
                                'close_commission_ratio': 13.6, 'close_commission_today_ratio': 13.6}

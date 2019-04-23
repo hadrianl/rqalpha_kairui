@@ -76,14 +76,13 @@ overflow:scroll; //超过部分使用滚动条
                     <button type="button" class="btn btn-dark btn-sm" id="close_websocket">断开</button>
                 </div>
                 <div class="btn-group" role="group" aria-label="draw_kline">
-                    <button type="button" class="btn btn-success btn-sm" id="send_message">开始画图</button>
-                    <button type="button" class="btn btn-danger btn-sm" id="close_ht">暂停画图</button>
+                    <button type="button" class="btn btn-success btn-sm" id="get_bar">查询交易</button>
                 </div>
                 <div class="btn-group">
 
                 <form class="form-inline">
                 <div class="form-group">
-                    <input type="text" class="form-control" placeholder="bar counts" aria-describedby="btnGroupAddon" id="message" aria-label="Input group" value="200">
+                    <input type="text" class="form-control" placeholder="bar counts" aria-describedby="btnGroupAddon" id="message" aria-label="Input group" value="2011-01-04">
                     <label for="message">@</label>
                       <input type="text" class="form-control" placeholder="code" aria-describedby="btnGroupAddon" id="code" aria-label="Input group" value="" readonly>
                 </div>
@@ -228,6 +227,18 @@ overflow:scroll; //超过部分使用滚动条
         <!--<li><a href="">Another nav item</a></li>-->
       <!--</ul>-->
     <!--</div>-->
+                <div class="modal fade" id="TradeDetail" tabindex="-1" role="dialog" aria-labelledby="TradeModal" aria-hidden="true">
+            <div class="modal-dialog" style="width:1600px">
+            <div class="modal-content">
+                <div class="modal-body" id="tradecharts" style="padding: 0px"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <!--<button type="button" class="btn btn-primary">提交更改</button>-->
+                </div>
+            </div>
+
+            </div>
+            </div>
     </div>
 </div>
 
@@ -526,7 +537,9 @@ $(function () {
                 if(d.topic==''){
                     <!--addBar(d);-->
                 }else if(d.topic=='trade'){
-                    addTrade(d);
+                    $("#tradecharts").html(d.html);
+                    $('#TradeDetail').modal('show');
+                    <!--addTrade(d);-->
                 }else if(d.topic=='account'){
                     updateAccount(d);
                 }else if(d.topic=='position'){
@@ -543,7 +556,7 @@ $(function () {
         $('#connect_websocket').click(function () {
             manages(true);
         });
-        $('#send_message').click(function () {
+        $('#get_bar').click(function () {
             //如果未连接到websocket
             is_huatu = true;
             if (!window.s) {
@@ -558,10 +571,16 @@ $(function () {
                 console.log('websocket已关闭');
             }
         });
-        $('#close_ht').click(function () {
-            is_huatu = false;
-            size = $('#message').val()-0;
-        });
+
+            $(document).keyup(function(event) {
+    if (event.which == "27") {
+        $('#TradeDetail').modal('hide');   // esc退出
+    }
+    });
+    $(".modal").on("hide.bs.modal",
+        function(){
+            $("#tradecharts").html("");
+         });
     });
 </script>
 </body>

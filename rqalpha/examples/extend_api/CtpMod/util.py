@@ -189,4 +189,10 @@ FUTURE_INFO = {
     'TS': {'contract_multiplier': 10000, 'margin_rate': 0.005,
            'commission': {'commission_type': COMMISSION_TYPE.BY_VOLUME, 'open_commission_ratio': 3,
                           'close_commission_ratio': 3, 'close_commission_today_ratio': 0}},
+    'EG': {'contract_multiplier': 10, 'margin_rate': 0.05,
+           'commission': {'commission_type': COMMISSION_TYPE.BY_VOLUME, 'open_commission_ratio': 3,
+                          'close_commission_ratio': 3, 'close_commission_today_ratio': 0}},
+    'SP': {'contract_multiplier': 10, 'margin_rate': 0.04,
+           'commission': {'commission_type': COMMISSION_TYPE.BY_VOLUME, 'open_commission_ratio': 3,
+                          'close_commission_ratio': 3, 'close_commission_today_ratio': 0}},
 }
