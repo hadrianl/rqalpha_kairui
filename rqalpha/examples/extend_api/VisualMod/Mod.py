@@ -25,6 +25,7 @@ from pyecharts_javascripthon.dom import alert, console, Math
 from pyecharts import Kline, Page, Line, Overlap, HeatMap, Grid, Bar
 import talib
 import datetime as dt
+import pandas as pd
 
 
 __config__ = {
@@ -45,11 +46,13 @@ class DataVisualMod(AbstractMod):
         self.CLI = set()
         self._data_queue = Queue()
         self._settlement_temp = []
+        self._trade_df = None
 
         # env.event_bus.add_listener(EVENT.POST_BAR, self._pub_bar)
         env.event_bus.add_listener(EVENT.POST_BAR, self._pub_account)
         # env.event_bus.add_listener(EVENT.POST_BAR, self._pub_position)
-        # env.event_bus.add_listener(EVENT.TRADE, self._pub_trade)
+
+        env.event_bus.add_listener(EVENT.TRADE, self._save_trade)
         env.event_bus.add_listener(EVENT.SETTLEMENT, self._pub_settlement)
         self._init_websocket_server()
         self.ps = subprocess.Popen(f'python {os.path.join(os.path.dirname(__file__), "VisualApp.py")} {self._host} {self._port}')
@@ -157,10 +160,19 @@ class DataVisualMod(AbstractMod):
 
         async def recv():
             while websocket.open:
-                data = await websocket.recv()
-                chart = {'topic': 'trade', 'html': f'{data}tesing!!!!!!!!!!!'}
-                _data = json.dumps(chart)
-                await self.send_data(_data)
+                _date = await websocket.recv()
+                try:
+                    trade_data = self._trade_df[_date]
+                    print(trade_data)
+                    html = get_bars(trade_data)
+                    print(html)
+                    chart = {'topic': 'trade', 'html': html}
+                    _data = json.dumps(chart)
+                except Exception as e:
+                    print(e)
+                else:
+                    await self.send_data(_data)
+
 
         await asyncio.wait([send(), recv()])
 
@@ -181,16 +193,31 @@ class DataVisualMod(AbstractMod):
         logger.debug(f'注销{websocket}')
         self.CLI.remove(websocket)
 
-    def _pub_trade(self, Trade):
+    def _save_trade(self, Trade):
         trade_dict = properties(Trade.trade)
-        trade_dict['topic'] = 'trade'
-        trade_dict['datetime'] = str(trade_dict['datetime'])
-        trade_dict['trading_datetime'] = str(trade_dict['trading_datetime'])
+        trade_dict['datetime'] = trade_dict['datetime']
+        trade_dict['trading_datetime'] = trade_dict['trading_datetime']
         trade_dict['side'] = trade_dict['side'].value
         trade_dict['position_effect'] = trade_dict['position_effect'].value
-        _data = json.dumps(trade_dict)
-        # self._trade_temp.append(_data)
-        self._data_queue.put(_data)
+
+        t = pd.DataFrame([trade_dict]).set_index('datetime', drop=False)
+
+        if self._trade_df is None:
+            self._trade_df = t
+        else:
+            self._trade_df = self._trade_df.append(t)
+
+    #
+    #
+    # def _save_trade(self, Trade):
+    #     trade_dict = properties(Trade.trade)
+    #     trade_dict['datetime'] = str(trade_dict['datetime'])
+    #     trade_dict['trading_datetime'] = str(trade_dict['trading_datetime'])
+    #     trade_dict['side'] = trade_dict['side'].value
+    #     trade_dict['position_effect'] = trade_dict['position_effect'].value
+    #
+    #     # self._trade_temp.append(_data)
+    #     self._data_queue.put(_data)
 
     def _inject_api(self):
         from rqalpha import export_as_api
@@ -238,12 +265,9 @@ class ServerProtocol(websockets.WebSocketServerProtocol):
 
 
 
-def get_bars(code):
-    _id = request.args.get('id', None)
+def get_bars(trade):
 
-    trade = Session.trades[code]
-
-    trade.loc[:, 'datetime'] = pd.to_datetime(trade.loc[:, 'datetime'], format='%Y-%m-%d %H:%M:%S')
+    _id = trade.exec_id[0]
     _match_trade = []
     _match = []
     _match_vol = 0
@@ -328,7 +352,9 @@ def get_bars(code):
     _from = trade_points_raw[0].datetime - dt.timedelta(minutes=60)
     _to = trade_points_raw[-1].datetime + dt.timedelta(minutes=60)
 
+    code = trade.order_book_id[0]
     f = Future(user='krdata', pwd='kairuitouzi') if code[:3] not in ['HSI', 'MHI', 'HHI'] else HKFuture(user='krdata', pwd='kairuitouzi')
+
     _bars = f.get_bars(code, fields=['datetime', 'open', 'close', 'low', 'high'],
                         start=_from, end=_to)
 

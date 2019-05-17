@@ -163,7 +163,7 @@ overflow:scroll; //超过部分使用滚动条
                   </tr>
                </thead>
                <tbody>
-                    <tr v-for="(pos, o_id) in position">
+                    <tr v-for="(pos, o_id) in position" v-if="pos.holding_pnl != 0">
                         <td>{[pos.order_book_id]}</td>
                         <td v-bind:style="{color:(pos.holding_pnl >= 0?'red':'green')}">{[pos.holding_pnl]}</td>
                         <td v-bind:style="{color:(pos.realized_pnl >= 0?'red':'green')}">{[pos.realized_pnl]}</td>
@@ -244,7 +244,7 @@ overflow:scroll; //超过部分使用滚动条
 
 <footer class="footer navbar-fixed-bottom">
       <div class="container">
-        <p class="text-muted" align="center" style="margin-top: 20px;color:#878B91;">凯瑞投资回测可视化@copyright 2018</p>
+        <p class="text-muted" align="center" style="margin-top: 20px;color:#878B91;">凯瑞投资回测可视化@copyright 2019</p>
         </div>
     </footer>
 <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
